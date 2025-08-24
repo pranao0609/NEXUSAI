@@ -15,12 +15,13 @@ except Exception as e:
     raise RuntimeError(f"Failed to import routers.auth: {e}") from e
 
 try:
-    from agents.orchestrator.orchestrator_agent import OrchestratorAgent
+    from agents.orchestrator.orchestrator_agent import build_pipeline
 except Exception as e:
-    raise RuntimeError(f"Failed to import OrchestratorAgent: {e}") from e
+    raise RuntimeError(f"Failed to import build_pipeline: {e}") from e
 
 logger = logging.getLogger("uvicorn.error")
 
+# --- FastAPI setup ---
 app = FastAPI(
     title="Hackathon Multi-Agent System",
     version="1.0.0",
@@ -39,8 +40,8 @@ app.add_middleware(
 # --- Routers ---
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
-# --- Orchestrator instance ---
-orchestrator = OrchestratorAgent()
+# --- Pipeline Graph instance ---
+pipeline = build_pipeline()
 
 # --- Health & Root ---
 @app.get("/", tags=["system"])
@@ -51,7 +52,7 @@ def read_root() -> Dict[str, str]:
 def health_check() -> Dict[str, str]:
     return {"status": "ok"}
 
-# --- Global exception handler (optional but useful in dev) ---
+# --- Global exception handler (optional but useful in dev/prod) ---
 @app.exception_handler(Exception)
 async def unhandled_exception_handler(_, exc: Exception):
     logger.exception("Unhandled error: %s", exc)
@@ -62,28 +63,36 @@ async def unhandled_exception_handler(_, exc: Exception):
 
 # --- Pipeline endpoint ---
 @app.post("/pipeline", tags=["pipeline"])
-async def pipeline(
+async def pipeline_endpoint(
     source: str = Query(..., description="ingestion source key e.g. wiki|web|arxiv|duckduckgo"),
     query: str = Query(..., description="search/topic query for ingestion"),
     title: str = Query("Generated Report", description="report title"),
     audience: str = Query("General", description="target audience"),
 ) -> Any:
     """
-    Runs the full multi-agent pipeline:
+    Runs the full multi-agent pipeline (LangGraph powered):
       1. Ingestion
       2. Summarization
       3. Analysis / Report Generation
     """
     try:
-        result = await orchestrator.run_pipeline(source, query, title, audience)
+        # input state (matches PipelineState in pipeline_graph.py)
+        input_state = {
+            "source": source,
+            "query": query,
+            "title": title,
+            "audience": audience,
+        }
+        result = await pipeline.ainvoke(
+    input_state,
+    config={"configurable": {"thread_id": "session-1"}}
+)
+
         return result
     except ValueError as ve:
-        # e.g. unknown source, bad params, validation issues
         raise HTTPException(status_code=400, detail=str(ve)) from ve
     except HTTPException:
-        # bubble up HTTPExceptions unchanged
         raise
     except Exception as e:
         logger.exception("Pipeline failed for source=%s query=%s: %s", source, query, e)
-        # Avoid leaking internals to clients
         raise HTTPException(status_code=500, detail="Pipeline execution failed") from e
