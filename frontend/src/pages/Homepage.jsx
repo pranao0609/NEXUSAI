@@ -197,6 +197,58 @@ const Homepage = () => {
     </div>
   </div>
 </section>
+{/* Footer Section */}
+<footer className="bg-[#1A1A1A] text-gray-300 py-12">
+  <div className="w-full px-8 lg:px-16 max-w-7xl mx-auto grid md:grid-cols-4 gap-10">
+    
+    {/* Brand */}
+    <div>
+      <h3 className="text-2xl font-bold text-white mb-4">NEXUSAI</h3>
+      <p className="text-gray-400 text-sm leading-relaxed">
+        Pioneering the future of artificial intelligence through collaborative multi-agent systems. 
+        Building technology that amplifies human potential.
+      </p>
+    </div>
+
+    {/* Links */}
+    <div>
+      <h4 className="text-lg font-semibold text-white mb-4">Quick Links</h4>
+      <ul className="space-y-2">
+        <li><a href="#home" className="hover:text-yellow-400">Home</a></li>
+        <li><a href="#features" className="hover:text-yellow-400">Features</a></li>
+        <li><a href="#about" className="hover:text-yellow-400">About Us</a></li>
+        <li><a href="#contact" className="hover:text-yellow-400">Contact</a></li>
+      </ul>
+    </div>
+
+    {/* Contact */}
+    <div>
+      <h4 className="text-lg font-semibold text-white mb-4">Contact Us</h4>
+      <ul className="space-y-2 text-sm">
+        <li>Email: <a href="mailto:info@ainexus.com" className="hover:text-yellow-400">info@ainexus.com</a></li>
+        <li>Phone: <span className="hover:text-yellow-400">+1 (555) 123-4567</span></li>
+        <li>Location: <span className="hover:text-yellow-400">San Francisco, CA</span></li>
+      </ul>
+    </div>
+
+    {/* Social */}
+    <div>
+      <h4 className="text-lg font-semibold text-white mb-4">Follow Us</h4>
+      <div className="flex space-x-4 text-xl">
+        <a href="#" className="hover:text-yellow-400">🌐</a>
+        <a href="#" className="hover:text-yellow-400">🐦</a>
+        <a href="#" className="hover:text-yellow-400">💼</a>
+        <a href="#" className="hover:text-yellow-400">📸</a>
+      </div>
+    </div>
+  </div>
+
+  {/* Bottom Bar */}
+  <div className="border-t border-gray-700 mt-12 pt-6 text-center text-gray-500 text-sm">
+    © {new Date().getFullYear()} NEXUSAI. All rights reserved.
+  </div>
+</footer>
+
 
 
       {/* Architecture Animation Keyframes */}
