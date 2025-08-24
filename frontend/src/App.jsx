@@ -9,10 +9,11 @@ import AiAgentChatApp from './pages/ai-agent-chat-app';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/dashboard';
 
+
 function App() {
   return (
     <div className="App">
-      <Dashboard />
+      <AiAgentChatApp />
       {/* <Routes>
         <Route path="/" element={<Homepage />} />
         <Route path="/chat" element={<ProtectedRoute><AiAgentChatApp /></ProtectedRoute>} />
