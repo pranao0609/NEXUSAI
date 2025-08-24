@@ -1,17 +1,44 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Navbar from '../components/Navbar';
+import LoginComponent from '../components/login';
 import ArchitectureDiagram from '../assets/homepage.drawio.svg';
 
 const Homepage = () => {
+  // State to control login modal visibility
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
   // Floating animation images data
-  const floatingImages = [
-    { id: 1, src: "https://images.unsplash.com/photo-1677442136019-21780ecad995?w=300&h=400&fit=crop&auto=format", delay: 0 },
-    { id: 2, src: "https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=300&h=400&fit=crop&auto=format", delay: 1 },
-    { id: 3, src: "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=300&h=400&fit=crop&auto=format", delay: 2 },
-    { id: 4, src: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=300&h=400&fit=crop&auto=format", delay: 0.5 },
-    { id: 5, src: "https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=300&h=400&fit=crop&auto=format", delay: 1.5 },
-    { id: 6, src: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=300&h=400&fit=crop&auto=format", delay: 2.5 },
-  ];
+
+
+
+  // Function to open login modal
+  const openLoginModal = () => {
+    setIsLoginModalOpen(true);
+    // Prevent body scroll when modal is open
+    document.body.style.overflow = 'hidden';
+  };
+
+  // Function to close login modal
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    // Restore body scroll when modal is closed
+    document.body.style.overflow = 'unset';
+  };
+
+  // Handle escape key press to close modal
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape' && isLoginModalOpen) {
+      closeLoginModal();
+    }
+  };
+
+  // Add event listener for escape key
+  React.useEffect(() => {
+    if (isLoginModalOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isLoginModalOpen]);
 
   return (
     <div className="min-h-screen bg-[#F2F2F2]">
@@ -36,7 +63,10 @@ const Homepage = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-              <button className="bg-[#7FA0A8] text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#6A8B94] transition-all duration-300 transform hover:scale-105 shadow-2xl">
+              <button 
+                onClick={openLoginModal}
+                className="bg-[#7FA0A8] text-white px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#6A8B94] transition-all duration-300 transform hover:scale-105 shadow-2xl"
+              >
                 Agent Studio
               </button>
               <button className="border-2 border-[#7FA0A8] text-[#7FA0A8] px-8 py-4 rounded-xl font-bold text-lg hover:bg-[#7FA0A8] hover:text-white transition-all duration-300 transform hover:scale-105">
@@ -197,6 +227,7 @@ const Homepage = () => {
     </div>
   </div>
 </section>
+
 {/* Footer Section */}
 <footer className="bg-[#1A1A1A] text-gray-300 py-12">
   <div className="w-full px-8 lg:px-16 max-w-7xl mx-auto grid md:grid-cols-4 gap-10">
@@ -249,7 +280,34 @@ const Homepage = () => {
   </div>
 </footer>
 
-
+      {/* Login Modal */}
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            onClick={closeLoginModal}
+          />
+          
+          {/* Modal Content */}
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto transform transition-all">
+              {/* Close Button */}
+              <button
+                onClick={closeLoginModal}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              
+              {/* Login Component */}
+              <LoginComponent onClose={closeLoginModal} />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Architecture Animation Keyframes */}
       <style jsx>{`

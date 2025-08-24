@@ -1,7 +1,8 @@
-import { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Menu, X } from "lucide-react";
+import LoginComponent from '../components/login';
 
-// Memoized components to prevent unnecessary re-renders
+// Memoized Logo component
 const Logo = () => (
   <div className="flex items-center space-x-3">
     <div className="relative">
@@ -16,6 +17,7 @@ const Logo = () => (
   </div>
 );
 
+// NavLink component
 const NavLink = ({ item, onClick, isMobile = false, index, totalItems }) => {
   const baseClasses = "text-gray-700 hover:text-gray-900 font-medium transition-all duration-300 cursor-pointer";
   const desktopClasses = "relative px-6 py-2 rounded-xl group overflow-hidden hover:bg-white/10 hover:shadow-lg";
@@ -23,16 +25,15 @@ const NavLink = ({ item, onClick, isMobile = false, index, totalItems }) => {
     index !== totalItems - 1 ? "border-b border-gray-200" : ""
   }`;
 
- const scrollToSection = () => {
-  const element = document.getElementById(item.to);
-  if (element) {
-    const offset = 20; // height of your navbar
-    const y = element.getBoundingClientRect().top + window.pageYOffset - offset;
-    window.scrollTo({ top: y, behavior: "smooth" });
-  }
-  if (onClick) onClick();
-};
-
+  const scrollToSection = () => {
+    const element = document.getElementById(item.to);
+    if (element) {
+      const offset = 20;
+      const y = element.getBoundingClientRect().top + window.pageYOffset - offset;
+      window.scrollTo({ top: y, behavior: "smooth" });
+    }
+    if (onClick) onClick();
+  };
 
   return (
     <button
@@ -51,6 +52,7 @@ const NavLink = ({ item, onClick, isMobile = false, index, totalItems }) => {
   );
 };
 
+// CTAButton component (Get Started)
 const CTAButton = ({ onClick, isMobile = false }) => {
   const baseClasses = "bg-gradient-to-r from-[#7FA0A8] to-[#6A8B94] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 cursor-pointer";
   const desktopClasses = "relative px-6 py-2.5 overflow-hidden group";
@@ -58,7 +60,7 @@ const CTAButton = ({ onClick, isMobile = false }) => {
 
   return (
     <button
-      onClick={onClick}
+      onClick={onClick} // Will open login modal from Navbar
       className={`${baseClasses} ${isMobile ? mobileClasses : desktopClasses}`}
     >
       {!isMobile && (
@@ -69,6 +71,7 @@ const CTAButton = ({ onClick, isMobile = false }) => {
   );
 };
 
+// GlassContainer component
 const GlassContainer = ({ children, className = "" }) => (
   <div className={`relative bg-white/20 backdrop-blur-md border-b border-white/30 overflow-hidden ${className}`}>
     {children}
@@ -77,15 +80,14 @@ const GlassContainer = ({ children, className = "" }) => (
 
 const Navbar = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
-  // Memoize navigation items to prevent recreation on every render
   const navItems = useMemo(() => [
     { name: "Home", to: "home" },
     { name: "Features", to: "features" },
     { name: "About Us", to: "about" },
   ], []);
 
-  // Memoize callbacks to prevent unnecessary re-renders
   const toggleMobileMenu = useCallback(() => {
     setIsMobileMenuOpen(prev => !prev);
   }, []);
@@ -98,7 +100,29 @@ const Navbar = () => {
     setIsMobileMenuOpen(false);
   }, []);
 
-  // Memoize mobile menu transition classes
+  const openLoginModal = () => {
+    setIsLoginModalOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeLoginModal = () => {
+    setIsLoginModalOpen(false);
+    document.body.style.overflow = 'unset';
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Escape' && isLoginModalOpen) {
+      closeLoginModal();
+    }
+  };
+
+  useEffect(() => {
+    if (isLoginModalOpen) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [isLoginModalOpen]);
+
   const mobileMenuClasses = useMemo(() => ({
     container: `fixed inset-x-0 top-0 z-40 md:hidden transition-all duration-300 ease-out ${
       isMobileMenuOpen ? "opacity-100 visible" : "opacity-0 invisible"
@@ -113,8 +137,7 @@ const Navbar = () => {
       <nav className="fixed top-0 left-0 right-0 z-50 border-b border-black/30 border-[0.1px]">
         <div className="w-full">
           <GlassContainer>
- 
-              <div className="relative z-10 px-6 py-4 flex items-center justify-between">
+            <div className="relative z-10 px-6 py-4 flex items-center justify-between">
               <Logo />
 
               {/* Desktop Navigation */}
@@ -126,7 +149,7 @@ const Navbar = () => {
 
               {/* Desktop CTA Button */}
               <div className="hidden md:block">
-                <CTAButton />
+                <CTAButton onClick={openLoginModal} />
               </div>
 
               {/* Mobile menu button */}
@@ -165,27 +188,42 @@ const Navbar = () => {
 
             {/* Mobile CTA */}
             <div className="px-6 pt-4">
-              <CTAButton onClick={handleMobileLinkClick} isMobile={true} />
+              <CTAButton onClick={() => { handleMobileLinkClick(); openLoginModal(); }} isMobile={true} />
             </div>
           </div>
         </GlassContainer>
       </div>
 
+      {/* Login Modal */}
+      {isLoginModalOpen && (
+        <div className="fixed inset-0 z-50 overflow-y-auto">
+          <div 
+            className="fixed inset-0 bg-black bg-opacity-50 transition-opacity"
+            onClick={closeLoginModal}
+          />
+          <div className="flex min-h-full items-center justify-center p-4">
+            <div className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full max-h-[90vh] overflow-y-auto transform transition-all">
+              <button
+                onClick={closeLoginModal}
+                className="absolute top-4 right-4 z-10 p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
+              >
+                <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+              <LoginComponent onClose={closeLoginModal} />
+            </div>
+          </div>
+        </div>
+      )}
+
       <style jsx>{`
         @keyframes shine {
-          0% {
-            transform: translateX(-100%) skewX(-12deg);
-          }
-          100% {
-            transform: translateX(200%) skewX(-12deg);
-          }
+          0% { transform: translateX(-100%) skewX(-12deg); }
+          100% { transform: translateX(200%) skewX(-12deg); }
         }
-        .animate-shine {
-          animation: shine 1.5s ease-out;
-        }
-        html {
-          scroll-padding-top: 120px;
-        }
+        .animate-shine { animation: shine 1.5s ease-out; }
+        html { scroll-padding-top: 120px; }
       `}</style>
     </>
   );
