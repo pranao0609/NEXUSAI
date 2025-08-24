@@ -48,13 +48,25 @@ const SettingsPage = () => {
   const [darkMode, setDarkMode] = useState(false);
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
   const [showApiKey, setShowApiKey] = useState(false);
-  const [profile, setProfile] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 (555) 123-4567',
-    company: 'Tech Corp',
-    timezone: 'America/New_York'
+  const [profile, setProfile] = useState(() => {
+    const savedProfile = localStorage.getItem('user');
+    console.log(savedProfile);
+    if (savedProfile) {
+      try {
+        return JSON.parse(savedProfile);
+      } catch (error) {
+        console.error('Error parsing profile from localStorage:', error);
+      }
+    }
+    return {
+
+      firstName: savedProfile.data.username,
+      lastName: 'N/A',
+      email: savedProfile.data.email,
+      phone: savedProfile.data.phone || 'N/A',
+      company: 'N/A',
+      timezone: 'N/A'
+    };
   });
 
   const handleNotificationChange = (key) => {
