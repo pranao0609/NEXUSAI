@@ -7,15 +7,16 @@ import Homepage from './pages/Homepage';
 import './App.css';
 import AiAgentChatApp from './pages/ai-agent-chat-app';
 import ProtectedRoute from './components/ProtectedRoute';
+import Dashboard from './pages/dashboard';
 
 function App() {
   return (
     <div className="App">
-  
-      <Routes>
+      <Dashboard />
+      {/* <Routes>
         <Route path="/" element={<Homepage />} />
         <Route path="/chat" element={<ProtectedRoute><AiAgentChatApp /></ProtectedRoute>} />
-      </Routes>
+      </Routes> */}
     </div>
   );
 }
