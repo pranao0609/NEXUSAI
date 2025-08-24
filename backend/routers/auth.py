@@ -49,7 +49,7 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
     
     response.set_cookie(
         key="access_token",
-        value=f"Bearer {access_token}",
+        value=f"{access_token}",
         httponly=True,
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         secure=True,
@@ -111,18 +111,14 @@ async def google_callback(request: Request):
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": user["username"]}, expires_delta=access_token_expires
-        )
+        )   
 
-        response = JSONResponse(content={
-            "status": "success",
-            "message": "User authenticated successfully. Cookie is set.",
-            "username": user["username"]
-        })
+        response = RedirectResponse(url=settings.FRONTEND_URL)
         # Step 5: Set the JWT in a secure, HTTPOnly cookie and redirect to the frontend.
        # response = RedirectResponse(url=settings.FRONTEND_URL)
         response.set_cookie(
             key="access_token",
-            value=f"Bearer {access_token}",
+            value=f"{access_token}",
             httponly=True,  # Important for security! Prevents access from client-side scripts.
             max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
             samesite="lax",
@@ -137,6 +133,10 @@ async def google_callback(request: Request):
     except Exception as e:
         # A general catch-all for other potential errors
         raise HTTPException(status_code=500, detail=f"An unexpected error occurred: {str(e)}")
+
+@router.get("/me", response_model=UserInDB)
+async def read_users_me(current_user: UserInDB = Depends(get_current_user)):
+    return current_user
 
 @router.get("/admin/protected")
 async def admin_protected_route(current_user: UserInDB = Depends(get_current_user)):
