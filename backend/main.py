@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import logging
 from typing import Any, Dict
+from fastapi.responses import FileResponse
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -61,10 +62,9 @@ async def unhandled_exception_handler(_, exc: Exception):
         content={"detail": "Internal server error"},
     )
 
-# --- Pipeline endpoint ---
 @app.post("/pipeline", tags=["pipeline"])
 async def pipeline_endpoint(
-    source: str = Query(..., description="ingestion source key e.g. wiki|web|arxiv|duckduckgo"),
+    source: str = Query(..., description="ingestion source key e.g. wiki|web|arxiv|csv"),
     query: str = Query(..., description="search/topic query for ingestion"),
     title: str = Query("Generated Report", description="report title"),
     audience: str = Query("General", description="target audience"),
@@ -74,6 +74,7 @@ async def pipeline_endpoint(
       1. Ingestion
       2. Summarization
       3. Analysis / Report Generation
+      4. PDF Generation (if available)
     """
     try:
         # input state (matches PipelineState in pipeline_graph.py)
@@ -83,11 +84,22 @@ async def pipeline_endpoint(
             "title": title,
             "audience": audience,
         }
-        result = await pipeline.ainvoke(
-    input_state,
-    config={"configurable": {"thread_id": "session-1"}}
-)
 
+        result = await pipeline.ainvoke(
+            input_state,
+            config={"configurable": {"thread_id": "session-1"}}
+        )
+
+        # if a pdf was generated, return it directly
+        pdf_path = result.get("pdf_path")
+        if pdf_path:
+            return FileResponse(
+                pdf_path,
+                media_type="application/pdf",
+                filename="report.pdf"
+            )
+
+        # otherwise return the raw result (json/dict/etc.)
         return result
     except ValueError as ve:
         raise HTTPException(status_code=400, detail=str(ve)) from ve
