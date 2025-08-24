@@ -821,7 +821,8 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div className="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white shadow-2xl">
+      <div className="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white shadow-2xl sticky top-0 h-screen relative">
+
         {/* Profile Section */}
         <div className="p-6 border-b border-gray-700">
           <button
