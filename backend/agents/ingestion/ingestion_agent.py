@@ -3,6 +3,7 @@ from .web_ingestor import WebIngestor
 from .arxiv_ingestor import ArxivIngestor
 from .wiki_ingestor import WikiIngestor
 from .csv_ingestion import CSVIngestor  
+from .pdf_ingestor import PDFIngestionAgent
 
 class IngestionAgent:
     def __init__(self):
@@ -11,6 +12,7 @@ class IngestionAgent:
             "arxiv": ArxivIngestor(),
             "wiki": WikiIngestor(),
             "csv": CSVIngestor(),
+            "pdf":PDFIngestionAgent()
         }
 
     def ingest(self, source: str, query: str):
