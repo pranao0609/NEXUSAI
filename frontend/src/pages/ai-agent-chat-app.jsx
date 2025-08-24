@@ -1,13 +1,34 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, User, Bot, CheckCircle, Clock, Circle } from 'lucide-react';
+import { 
+  Send, 
+  User, 
+  Bot, 
+  CheckCircle, 
+  Clock, 
+  Circle, 
+  ChevronRight,
+  Sparkles,
+  Settings,
+  MessageSquare,
+  Trash2,
+  Search
+} from 'lucide-react';
+// Remove these imports and handle them in your actual implementation:
+ import axios from 'axios';
+ import { useNavigate } from 'react-router-dom';
+import Profile from '../components/profile';
+import PricingModal from '../components/PricingModal';
 
 const AiAgentChatApp = () => {
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Can you help me research the latest trends in renewable energy?", sender: 'user' },
-    { id: 2, text: "I'll help you research the latest trends in renewable energy. Let me gather the most current information for you.", sender: 'ai' },
-    { id: 3, text: "What are the top 3 emerging technologies?", sender: 'user' },
-    { id: 4, text: "Based on my research, here are the top 3 emerging technologies in renewable energy:\n\n1. Perovskite solar cells - offering higher efficiency at lower costs\n2. Floating offshore wind turbines - accessing deeper waters with stronger winds\n3. Green hydrogen production - storing renewable energy for industrial use", sender: 'ai' }
-  ]);
+  const [messages, setMessages] = useState([]);
+  const [userData, setUserData] = useState(null);
+  // Chat history will be loaded from backend
+  const [chatHistory, setChatHistory] = useState([]);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [currentChatId, setCurrentChatId] = useState(null);
+  
+   const navigate = useNavigate(); // Uncomment when using react-router-dom
   
   const [inputValue, setInputValue] = useState('');
   const [agents, setAgents] = useState([
@@ -21,6 +42,31 @@ const AiAgentChatApp = () => {
   const [dots, setDots] = useState('');
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      
+     
+      const localUserData = localStorage.getItem('user');
+      if (localUserData) {
+        setUserData(JSON.parse(localUserData));
+        return;
+      }
+
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.get(`${API_BASE_URL}/auth/me`, { withCredentials: true });
+        localStorage.setItem('user', JSON.stringify(response.data));
+        setUserData(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user data, redirecting to login.');
+        navigate('/login');
+      }
+     
+    };
+
+    fetchUserData();
+  }, [navigate]); // Remove navigate dependency for demo
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -31,25 +77,173 @@ const AiAgentChatApp = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSend = () => {
+  const handleProfileClick = () => {
+    setIsProfileOpen(true);
+  };
+
+  const handleCloseProfile = () => {
+    setIsProfileOpen(false);
+  };
+
+  const handleUpgradeClick = () => {
+    setIsPricingOpen(true);
+  };
+
+  const handleClosePricing = () => {
+    setIsPricingOpen(false);
+  };
+
+  const handleChatHistoryClick = (chatId) => {
+    setCurrentChatId(chatId);
+    // Here you would typically load the chat messages for this conversation
+    // For now, we'll just highlight the selected chat
+  };
+
+  const handleDeleteChat = (chatId, e) => {
+    e.stopPropagation();
+    setChatHistory(prev => prev.filter(chat => chat.id !== chatId));
+    if (currentChatId === chatId) {
+      setCurrentChatId(null);
+    }
+  };
+
+  const handleNewChat = () => {
+    setMessages([]);
+    setCurrentChatId(null);
+    setAgents(prev => prev.map(agent => ({ ...agent, status: 'pending' })));
+  };
+
+  const handleSend = async () => {
     if (inputValue.trim()) {
-      const newMessage = {
+      const userMessage = {
         id: messages.length + 1,
         text: inputValue,
         sender: 'user'
       };
-      setMessages([...messages, newMessage]);
-      setInputValue('');
+      setMessages([...messages, userMessage]);
       
-      // Simulate AI response
-      setTimeout(() => {
-        const aiResponse = {
-          id: messages.length + 2,
-          text: "I'm processing your request and gathering the information you need. This will just take a moment.",
-          sender: 'ai'
+      // Create new chat history entry if this is a new conversation
+      if (!currentChatId && messages.length === 0) {
+        const newChat = {
+          id: Date.now(),
+          title: inputValue.length > 50 ? inputValue.substring(0, 50) + "..." : inputValue,
+          timestamp: "Just now",
+          preview: inputValue
         };
-        setMessages(prev => [...prev, aiResponse]);
+        setChatHistory(prev => [newChat, ...prev]);
+        setCurrentChatId(newChat.id);
+      }
+      
+      // Add initial AI response
+      const initialAiResponse = {
+        id: messages.length + 2,
+        text: "I'm processing your request and gathering the information you need. This will just take a moment.",
+        sender: 'ai'
+      };
+      setMessages(prev => [...prev, initialAiResponse]);
+      
+      // Update agents status
+      setAgents(prev => prev.map(agent => {
+        if (agent.id === 1) return { ...agent, status: 'completed' };
+        if (agent.id === 2) return { ...agent, status: 'active' };
+        return { ...agent, status: 'pending' };
+      }));
+      
+      // Simulate API call with timeout for demo
+      setTimeout(() => {
+        // Update agents status
+        setAgents(prev => prev.map(agent => {
+          if (agent.id === 2) return { ...agent, status: 'completed' };
+          if (agent.id === 3) return { ...agent, status: 'active' };
+          return agent;
+        }));
+        
+        setTimeout(() => {
+          // Final response
+          const finalResponse = `Thank you for your question: "${inputValue}". I've processed your request and here's my response. This is a demo response that shows how the AI agent system works with multiple processing stages.`;
+          
+          // Update the AI response with the actual data
+          setMessages(prev => prev.map(msg => {
+            if (msg.id === initialAiResponse.id) {
+              return { ...msg, text: finalResponse };
+            }
+            return msg;
+          }));
+          
+          // Complete all agents
+          setAgents(prev => prev.map(agent => ({ ...agent, status: 'completed' })));
+        }, 2000);
       }, 1000);
+      
+     
+      // Uncomment for actual API implementation:
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.post(`${API_BASE_URL}/pipeline`, null, {
+          params: {
+            source: 'wiki',
+            query: inputValue,
+            title: 'Generated Report',
+            audience: 'General'
+          },
+          withCredentials: true,
+          responseType: 'json'
+        });
+        
+        setAgents(prev => prev.map(agent => {
+          if (agent.id === 2) return { ...agent, status: 'completed' };
+          if (agent.id === 3) return { ...agent, status: 'active' };
+          return agent;
+        }));
+        
+        const responseData = response.data;
+        let summaryText = "I couldn't find any relevant information.";
+        
+        if (responseData && responseData.docs && responseData.docs.length > 0) {
+          summaryText = responseData.docs[0].metadata.summary;
+        }
+        
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === initialAiResponse.id) {
+            return { ...msg, text: summaryText };
+          }
+          return msg;
+        }));
+        
+        setAgents(prev => prev.map(agent => {
+          if (agent.id === 3) return { ...agent, status: 'completed' };
+          if (agent.id === 4) return { ...agent, status: 'active' };
+          return agent;
+        }));
+        
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        
+        let errorMessage = "I'm sorry, I encountered an error while processing your request. Please try again later.";
+        
+        if (error.response) {
+          if (error.response.status === 401) {
+            errorMessage = "Authentication error: The API key for the AI service appears to be invalid or expired. Please contact the administrator.";
+          } else if (error.response.status === 500) {
+            errorMessage = "The server encountered an internal error. This might be due to an issue with the AI service. Please try again later.";
+          }
+        }
+        
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === initialAiResponse.id) {
+            return { ...msg, text: errorMessage };
+          }
+          return msg;
+        }));
+        
+        setAgents(prev => prev.map(agent => {
+          if (agent.id === 2 || agent.id === 3) return { ...agent, status: 'failed' };
+          return agent;
+        }));
+      }
+   
+      
+      setInputValue('');
     }
   };
 
@@ -61,26 +255,103 @@ const AiAgentChatApp = () => {
         return <Circle className="w-5 h-5 text-blue-500 animate-pulse" />;
       case 'pending':
         return <Clock className="w-5 h-5 text-gray-400" />;
+      case 'failed':
+        return <Circle className="w-5 h-5 text-red-500" />;
       default:
         return <Circle className="w-5 h-5 text-gray-400" />;
     }
   };
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col">
-      {/* Top Bar */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center shadow-sm">
-        <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-            <Bot className="w-5 h-5 text-white" />
-          </div>
-          <h1 className="text-xl font-semibold text-gray-800">AI Agent Assistant</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Sidebar - Same as Dashboard */}
+      <div className="w-64 bg-gradient-to-b from-gray-900 to-gray-800 text-white shadow-2xl sticky top-0 h-screen relative">
+        {/* Profile Section */}
+        <div className="p-6 border-b border-gray-700">
+          <button
+            onClick={handleProfileClick}
+            className="w-full flex items-center space-x-3 p-3 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-300 group"
+          >
+            <div className="w-12 h-12 bg-gradient-to-r from-[#7FA0A8] to-[#6A8B94] rounded-full flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <User className="w-6 h-6 text-white" />
+            </div>
+            <div className="flex-1 text-left">
+              <h3 className="font-semibold text-white">John Doe</h3>
+              <p className="text-sm text-gray-300">Premium User</p>
+            </div>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
+          </button>
         </div>
-        <div className="flex items-center space-x-3">
-          <span className="text-sm text-gray-600">Sarah Chen</span>
-          <div className="w-9 h-9 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
-            <User className="w-5 h-5 text-white" />
+
+        {/* New Chat Button */}
+        <div className="p-4">
+          <button
+            onClick={handleNewChat}
+            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-[#7FA0A8] hover:bg-[#6A8B94] transition-all duration-200"
+          >
+            <MessageSquare className="w-5 h-5" />
+            <span className="font-medium">New Chat</span>
+          </button>
+        </div>
+
+        {/* Chat History Section */}
+        <div className="flex-1 overflow-y-auto px-4">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+              Chat History
+            </h3>
+            <div className="space-y-2">
+              {chatHistory.map((chat) => (
+                <button
+                  key={chat.id}
+                  onClick={() => handleChatHistoryClick(chat.id)}
+                  className={`w-full text-left p-3 rounded-lg transition-all duration-200 group relative ${
+                    currentChatId === chat.id
+                      ? 'bg-[#7FA0A8] text-white'
+                      : 'text-gray-300 hover:bg-white/10 hover:text-white'
+                  }`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-medium truncate mb-1">
+                        {chat.title}
+                      </h4>
+                      <p className="text-xs text-gray-400 truncate">
+                        {chat.preview}
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {chat.timestamp}
+                      </p>
+                    </div>
+                    <button
+                      onClick={(e) => handleDeleteChat(chat.id, e)}
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500 rounded transition-all ml-2"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                    </button>
+                  </div>
+                </button>
+              ))}
+            </div>
           </div>
+        </div>
+
+        {/* Settings and Bottom Section */}
+        <div className="absolute bottom-6 left-6 right-6 w-[200px] space-y-3">
+          
+          
+          <button 
+            onClick={handleUpgradeClick}
+            className="w-full bg-gradient-to-r from-[#7FA0A8] to-[#6A8B94] rounded-lg p-3 hover:from-[#6A8B94] hover:to-[#7FA0A8] transition-all duration-300"
+          >
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-5 h-5 text-white" />
+              <div>
+                <h4 className="text-white font-medium text-sm">Upgrade Pro</h4>
+                <p className="text-white/80 text-xs">Unlock premium features</p>
+              </div>
+            </div>
+          </button>
         </div>
       </div>
 
@@ -88,14 +359,35 @@ const AiAgentChatApp = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Chat Panel */}
         <div className="flex-1 flex flex-col bg-white">
+          {/* Chat Header */}
+          <div className="border-b border-gray-200 px-6 py-4 bg-white">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-xl font-semibold text-gray-900">AI Assistant</h1>
+                <p className="text-sm text-gray-500">Ask me anything, I'm here to help!</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-green-600 font-medium">Online</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Messages Container */}
           <div className="flex-1 overflow-y-auto px-8 py-6">
             <div className="max-w-3xl mx-auto space-y-6">
+              {messages.length === 0 && (
+                <div className="text-center py-12">
+                  <Bot className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Start a conversation</h3>
+                  <p className="text-gray-500">Ask me anything! I can help with research, analysis, coding, and much more.</p>
+                </div>
+              )}
+              
               {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className="group"
-                >
+                <div key={message.id} className="group">
                   {message.sender === 'user' ? (
                     <div className="flex justify-end mb-1">
                       <span className="text-xs text-gray-500 mr-2">You</span>
@@ -157,6 +449,8 @@ const AiAgentChatApp = () => {
                     ? 'bg-white border-2 border-blue-500 shadow-lg transform scale-105'
                     : agent.status === 'completed'
                     ? 'bg-white border border-gray-200 opacity-75'
+                    : agent.status === 'failed'
+                    ? 'bg-white border border-red-200 opacity-75'
                     : 'bg-white border border-gray-200 opacity-50'
                 }`}
               >
@@ -165,7 +459,11 @@ const AiAgentChatApp = () => {
                     <div className="flex items-center space-x-2 mb-1">
                       {getStatusIcon(agent.status)}
                       <h3 className={`font-medium ${
-                        agent.status === 'active' ? 'text-blue-600' : 'text-gray-700'
+                        agent.status === 'active' 
+                          ? 'text-blue-600' 
+                          : agent.status === 'failed'
+                          ? 'text-red-600'
+                          : 'text-gray-700'
                       }`}>
                         {agent.name}
                       </h3>
@@ -195,8 +493,8 @@ const AiAgentChatApp = () => {
             <h3 className="font-medium text-gray-700 mb-2">Session Summary</h3>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span className="text-gray-500">Tasks Completed</span>
-                <span className="font-medium text-gray-700">1 / 4</span>
+                <span className="text-gray-500">Messages</span>
+                <span className="font-medium text-gray-700">{messages.length}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Active Time</span>
@@ -204,12 +502,18 @@ const AiAgentChatApp = () => {
               </div>
               <div className="flex justify-between">
                 <span className="text-gray-500">Status</span>
-                <span className="font-medium text-green-600">Processing</span>
+                <span className="font-medium text-green-600">
+                  {agents.some(a => a.status === 'active') ? 'Processing' : 'Ready'}
+                </span>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Modal Components */}
+      <Profile isOpen={isProfileOpen} onClose={handleCloseProfile} />
+      <PricingModal isOpen={isPricingOpen} onClose={handleClosePricing} />
     </div>
   );
 };

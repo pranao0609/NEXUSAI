@@ -3,7 +3,7 @@ from fastapi.responses import RedirectResponse ,JSONResponse
 import httpx
 import requests
 from fastapi.security import OAuth2PasswordRequestForm
-from schemas.user import UserCreate, UserInDB, Token, Role
+from schemas.user import UserCreate, UserInDB, Token, Role, UserOut, LoginResponse
 from utils.security import get_password_hash, verify_password, create_access_token
 from db.database import user_collection
 from datetime import timedelta
@@ -31,7 +31,7 @@ async def register(user: UserCreate):
     await user_collection.insert_one(user_in_db.dict(by_alias=True))
     return user_in_db
 
-@router.post("/login")
+@router.post("/login", response_model=LoginResponse)
 async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     user = await user_collection.find_one({"username": form_data.username})
     if not user:
@@ -56,7 +56,8 @@ async def login(response: Response, form_data: OAuth2PasswordRequestForm = Depen
         samesite="lax"
     )
     
-    return {"access_token": access_token, "token_type": "bearer"}
+    user_out = UserOut(**user_obj.dict())
+    return {"access_token": access_token, "token_type": "bearer", "user": user_out}
 
 @router.get("/google/login")
 async def google_login():
