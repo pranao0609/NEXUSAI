@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import { Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
@@ -17,9 +17,33 @@ export default function LoginComponent({ onClose }) {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.get(`${API_BASE_URL}/auth/me`, { withCredentials: true });
+
+        if (response.data && response.data.username) {
+          // Already authenticated → go to dashboard
+          navigate('/dashboard');
+        }
+      } catch (err) {
+        console.log("Not authenticated yet", err.response?.data || err.message);
+      }
+    };
+    checkAuth();
+  }, [navigate]);
+
   const handleInputChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     if (error) setError('');
+  };
+
+  // Store authentication data
+  const setAuthData = (token, userData) => {
+    localStorage.setItem('authToken', token);
+    localStorage.setItem('userData', JSON.stringify(userData));
+    localStorage.setItem('isAuthenticated', 'true');
   };
 
   const handleSubmit = async (e) => {
@@ -40,8 +64,15 @@ export default function LoginComponent({ onClose }) {
         });
 
         if (response.data.access_token) {
+          // Store authentication data
+          setAuthData(response.data.access_token, {
+            name: response.data.user?.name || 'User',
+            email: formData.email
+          });
+
+          // Close modal and redirect to dashboard
           if (onClose) onClose();
-          navigate('/chat');
+          navigate('/dashboard');
         }
 
       } else if (mode === 'signup') {
@@ -53,7 +84,26 @@ export default function LoginComponent({ onClose }) {
         });
 
         if (response.data.success) {
-          setMode('login'); // switch to login after signup
+          // Auto-login after successful signup
+          const loginResponse = await axios.post(`${API_BASE_URL}/auth/login`, {
+            username: formData.email,
+            password: formData.password
+          }, {
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            transformRequest: [(data) => Object.entries(data).map(([k,v])=>`${encodeURIComponent(k)}=${encodeURIComponent(v)}`).join('&')]
+          });
+
+          if (loginResponse.data.access_token) {
+            // Store authentication data
+            setAuthData(loginResponse.data.access_token, {
+              name: formData.name,
+              email: formData.email
+            });
+
+            // Close modal and redirect to dashboard
+            if (onClose) onClose();
+            navigate('/dashboard');
+          }
         }
       }
 
@@ -70,7 +120,11 @@ export default function LoginComponent({ onClose }) {
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
       const response = await axios.get(`${API_BASE_URL}/auth/google/login`);
-      if (response.data.url) window.location.href = response.data.url;
+      if (response.data.url) {
+        // Store a flag to redirect after Google auth
+        localStorage.setItem('googleAuthPending', 'true');
+        window.location.href = response.data.url;
+      }
     } catch (err) {
       console.error(err);
       setError('Could not initiate Google login. Please try again.');
@@ -87,7 +141,7 @@ export default function LoginComponent({ onClose }) {
           {mode === 'login' ? 'Welcome back' : 'Create your account'}
         </h2>
         <p className="mt-2 text-sm text-gray-600">
-          {mode === 'login' ? 'Sign in to your account' : 'Sign up to get started'}
+          {mode === 'login' ? 'Sign in to access your dashboard' : 'Sign up to get started with AI agents'}
         </p>
       </div>
 
@@ -198,9 +252,9 @@ export default function LoginComponent({ onClose }) {
           <button
             type="submit"
             disabled={isLoading}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-lg text-white bg-[#7FA0A8] hover:bg-[#6A8B94] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#7FA0A8] transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? (mode === 'login' ? 'Signing in...' : 'Signing up...') : (mode === 'login' ? 'Sign in' : 'Sign up')}
+            {isLoading ? (mode === 'login' ? 'Signing in...' : 'Signing up...') : (mode === 'login' ? 'Sign in to Dashboard' : 'Create Account & Continue')}
           </button>
         </div>
       </form>
@@ -211,7 +265,7 @@ export default function LoginComponent({ onClose }) {
           {mode === 'login' ? "Don't have an account?" : "Already have an account?"}{' '}
           <button
             onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-            className="font-medium text-blue-600 hover:text-blue-500"
+            className="font-medium text-[#7FA0A8] hover:text-[#6A8B94]"
           >
             {mode === 'login' ? 'Sign up now' : 'Sign in'}
           </button>
@@ -219,4 +273,4 @@ export default function LoginComponent({ onClose }) {
       </div>
     </div>
   );
-}
+};

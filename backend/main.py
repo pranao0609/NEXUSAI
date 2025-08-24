@@ -1,8 +1,5 @@
 # main.py
 from __future__ import annotations
-from fastapi import FastAPI
-from routers import auth
-from fastapi.middleware.cors import CORSMiddleware
 
 import logging
 from typing import Any, Dict
@@ -42,7 +39,6 @@ app.add_middleware(
 )
 
 # --- Routers ---
-
 app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 # --- Pipeline Graph instance ---

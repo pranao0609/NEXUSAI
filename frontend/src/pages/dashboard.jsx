@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Search, 
@@ -101,7 +101,7 @@ const Dashboard = () => {
               <User className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1 text-left">
-              <h3 className="font-semibold text-white">John Doe</h3>
+              <h3 className="font-semibold text-white">{userData ? userData.name : 'Guest'}</h3>
               <p className="text-sm text-gray-300">Premium User</p>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
@@ -150,7 +150,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            Welcome back, <span className="text-[#7FA0A8]">John</span>! 👋
+            Welcome back, <span className="text-[#7FA0A8]">{userData ? userData.name : 'Guest'}</span>! 👋
           </h1>
           <p className="text-xl text-gray-600">
             Manage your AI agents and monitor their performance

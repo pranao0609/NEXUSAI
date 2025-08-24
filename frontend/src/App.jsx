@@ -12,11 +12,12 @@ import Dashboard from './pages/dashboard';
 function App() {
   return (
     <div className="App">
-      <Dashboard />
-      {/* <Routes>
+      
+      <Routes>
         <Route path="/" element={<Homepage />} />
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/chat" element={<ProtectedRoute><AiAgentChatApp /></ProtectedRoute>} />
-      </Routes> */}
+      </Routes>
     </div>
   );
 }
