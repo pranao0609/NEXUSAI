@@ -2,7 +2,7 @@
 from .web_ingestor import WebIngestor
 from .arxiv_ingestor import ArxivIngestor
 from .wiki_ingestor import WikiIngestor
-from .duckduckgo_ingestor import DuckDuckGoIngestor
+from .csv_ingestion import CSVIngestor  
 
 class IngestionAgent:
     def __init__(self):
@@ -10,7 +10,7 @@ class IngestionAgent:
             "web": WebIngestor(),
             "arxiv": ArxivIngestor(),
             "wiki": WikiIngestor(),
-            "duckduckgo": DuckDuckGoIngestor(),
+            "csv": CSVIngestor(),
         }
 
     def ingest(self, source: str, query: str):
