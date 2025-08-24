@@ -16,10 +16,368 @@ import {
   Stethoscope,
   BookOpen,
   Wifi,
-  DollarSign
+  DollarSign,
+  Bell,
+  Shield,
+  Key,
+  Mail,
+  Phone,
+  Globe,
+  Moon,
+  Sun,
+  Eye,
+  EyeOff,
+  Save,
+  Camera
 } from 'lucide-react';
 import Profile from '../components/profile';
 import PricingModal from '../components/PricingModal';
+
+// Settings Component
+const SettingsPage = () => {
+  const [activeSettingsTab, setActiveSettingsTab] = useState('profile');
+  const [notifications, setNotifications] = useState({
+    emailNotifications: true,
+    pushNotifications: false,
+    smsNotifications: true,
+    marketingEmails: false
+  });
+  const [darkMode, setDarkMode] = useState(false);
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [profile, setProfile] = useState({
+    firstName: 'John',
+    lastName: 'Doe',
+    email: 'john.doe@example.com',
+    phone: '+1 (555) 123-4567',
+    company: 'Tech Corp',
+    timezone: 'America/New_York'
+  });
+
+  const handleNotificationChange = (key) => {
+    setNotifications(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  const handleProfileChange = (key, value) => {
+    setProfile(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  return (
+    <div className="flex-1 p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="p-2 bg-gradient-to-r from-[#7FA0A8] to-[#6A8B94] rounded-lg">
+              <Settings className="w-6 h-6 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900">Settings</h1>
+          </div>
+          <p className="text-xl text-gray-600">
+            Manage your account preferences and security settings
+          </p>
+        </div>
+
+        {/* Settings Content */}
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Settings Navigation */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 sticky top-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Settings</h3>
+              <nav className="space-y-2">
+                {[
+                  { id: 'profile', name: 'Profile', icon: User },
+                  { id: 'notifications', name: 'Notifications', icon: Bell },
+                  { id: 'security', name: 'Security', icon: Shield },
+                  { id: 'api', name: 'API Keys', icon: Key },
+                
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveSettingsTab(item.id)}
+                    className={`w-full flex items-center space-x-3 px-3 py-2 rounded-lg text-left transition-colors ${
+                      activeSettingsTab === item.id
+                        ? 'bg-[#7FA0A8] text-white'
+                        : 'text-gray-700 hover:bg-gray-100'
+                    }`}
+                  >
+                    <item.icon className="w-4 h-4" />
+                    <span className="text-sm font-medium">{item.name}</span>
+                  </button>
+                ))}
+              </nav>
+            </div>
+          </div>
+
+          {/* Settings Content Area */}
+          <div className="lg:col-span-3">
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              
+              {/* Profile Settings */}
+              {activeSettingsTab === 'profile' && (
+                <div>
+                  <div className="flex items-center space-x-3 mb-6">
+                    <User className="w-6 h-6 text-[#7FA0A8]" />
+                    <h2 className="text-xl font-semibold text-gray-900">Profile Settings</h2>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {/* Profile Photo */}
+                    <div className="flex items-center space-x-6">
+                      <div className="w-20 h-20 bg-gradient-to-r from-[#7FA0A8] to-[#6A8B94] rounded-full flex items-center justify-center">
+                        <User className="w-10 h-10 text-white" />
+                      </div>
+                      <div>
+                        <button className="flex items-center space-x-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                          <Camera className="w-4 h-4" />
+                          <span className="text-sm font-medium">Change Photo</span>
+                        </button>
+                        <p className="text-xs text-gray-500 mt-1">JPG, PNG or GIF (max. 5MB)</p>
+                      </div>
+                    </div>
+
+                    {/* Form Fields */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <input
+                          type="text"
+                          value={profile.firstName}
+                          onChange={(e) => handleProfileChange('firstName', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7FA0A8] focus:border-[#7FA0A8] transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                        <input
+                          type="text"
+                          value={profile.lastName}
+                          onChange={(e) => handleProfileChange('lastName', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7FA0A8] focus:border-[#7FA0A8] transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+                        <input
+                          type="email"
+                          value={profile.email}
+                          onChange={(e) => handleProfileChange('email', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7FA0A8] focus:border-[#7FA0A8] transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Phone</label>
+                        <input
+                          type="tel"
+                          value={profile.phone}
+                          onChange={(e) => handleProfileChange('phone', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7FA0A8] focus:border-[#7FA0A8] transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Company</label>
+                        <input
+                          type="text"
+                          value={profile.company}
+                          onChange={(e) => handleProfileChange('company', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7FA0A8] focus:border-[#7FA0A8] transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                        <select
+                          value={profile.timezone}
+                          onChange={(e) => handleProfileChange('timezone', e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7FA0A8] focus:border-[#7FA0A8] transition-colors"
+                        >
+                          <option value="America/New_York">Eastern Time</option>
+                          <option value="America/Chicago">Central Time</option>
+                          <option value="America/Denver">Mountain Time</option>
+                          <option value="America/Los_Angeles">Pacific Time</option>
+                          <option value="UTC">UTC</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end">
+                      <button className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-[#7FA0A8] to-[#6A8B94] text-white rounded-lg hover:from-[#6A8B94] hover:to-[#7FA0A8] transition-all duration-200">
+                        <Save className="w-4 h-4" />
+                        <span>Save Changes</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Notifications Settings */}
+              {activeSettingsTab === 'notifications' && (
+                <div>
+                  <div className="flex items-center space-x-3 mb-6">
+                    <Bell className="w-6 h-6 text-[#7FA0A8]" />
+                    <h2 className="text-xl font-semibold text-gray-900">Notification Preferences</h2>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {[
+                      { key: 'emailNotifications', label: 'Email Notifications', description: 'Receive notifications via email', icon: Mail },
+                      { key: 'pushNotifications', label: 'Push Notifications', description: 'Receive browser push notifications', icon: Bell },
+                      { key: 'smsNotifications', label: 'SMS Notifications', description: 'Receive notifications via SMS', icon: Phone },
+                      { key: 'marketingEmails', label: 'Marketing Emails', description: 'Receive promotional and marketing emails', icon: Mail }
+                    ].map((item) => (
+                      <div key={item.key} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div className="flex items-center space-x-3">
+                          <item.icon className="w-5 h-5 text-gray-400" />
+                          <div>
+                            <h3 className="text-sm font-medium text-gray-900">{item.label}</h3>
+                            <p className="text-xs text-gray-500">{item.description}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleNotificationChange(item.key)}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            notifications[item.key] ? 'bg-[#7FA0A8]' : 'bg-gray-300'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              notifications[item.key] ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Security Settings */}
+              {activeSettingsTab === 'security' && (
+                <div>
+                  <div className="flex items-center space-x-3 mb-6">
+                    <Shield className="w-6 h-6 text-[#7FA0A8]" />
+                    <h2 className="text-xl font-semibold text-gray-900">Security Settings</h2>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    {/* Two Factor Authentication */}
+                    <div className="p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900">Two-Factor Authentication</h3>
+                          <p className="text-xs text-gray-500">Add an extra layer of security to your account</p>
+                        </div>
+                        <button
+                          onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
+                          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            twoFactorEnabled
+                              ? 'bg-green-100 text-green-800 hover:bg-green-200'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          {twoFactorEnabled ? 'Enabled' : 'Enable'}
+                        </button>
+                      </div>
+                      {twoFactorEnabled && (
+                        <div className="text-xs text-green-600">
+                          ✓ Two-factor authentication is active
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Change Password */}
+                    <div className="p-4 border border-gray-200 rounded-lg">
+                      <h3 className="text-sm font-medium text-gray-900 mb-3">Change Password</h3>
+                      <div className="space-y-3">
+                        <input
+                          type="password"
+                          placeholder="Current Password"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7FA0A8] focus:border-[#7FA0A8] transition-colors"
+                        />
+                        <input
+                          type="password"
+                          placeholder="New Password"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7FA0A8] focus:border-[#7FA0A8] transition-colors"
+                        />
+                        <input
+                          type="password"
+                          placeholder="Confirm New Password"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#7FA0A8] focus:border-[#7FA0A8] transition-colors"
+                        />
+                        <button className="px-4 py-2 bg-[#7FA0A8] text-white rounded-lg hover:bg-[#6A8B94] transition-colors text-sm font-medium">
+                          Update Password
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* API Keys Settings */}
+              {activeSettingsTab === 'api' && (
+                <div>
+                  <div className="flex items-center space-x-3 mb-6">
+                    <Key className="w-6 h-6 text-[#7FA0A8]" />
+                    <h2 className="text-xl font-semibold text-gray-900">API Keys</h2>
+                  </div>
+                  
+                  <div className="space-y-6">
+                    <div className="p-4 border border-gray-200 rounded-lg">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <h3 className="text-sm font-medium text-gray-900">Primary API Key</h3>
+                          <p className="text-xs text-gray-500">Use this key to authenticate API requests</p>
+                        </div>
+                        <button
+                          onClick={() => setShowApiKey(!showApiKey)}
+                          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                      </div>
+                      <div className="bg-gray-900 rounded-lg p-3 mb-3">
+                        <code className="text-green-400 text-sm">
+                          {showApiKey ? 'sk-1234567890abcdef1234567890abcdef' : '••••••••••••••••••••••••••••••••'}
+                        </code>
+                      </div>
+                      <div className="flex space-x-2">
+                        <button className="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded text-xs font-medium transition-colors">
+                          Copy Key
+                        </button>
+                        <button className="px-3 py-1 bg-red-100 hover:bg-red-200 text-red-700 rounded text-xs font-medium transition-colors">
+                          Regenerate
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                      <div className="flex items-start space-x-3">
+                        <Shield className="w-5 h-5 text-yellow-600 mt-0.5" />
+                        <div>
+                          <h4 className="text-sm font-semibold text-yellow-900 mb-1">API Key Security</h4>
+                          <p className="text-sm text-yellow-800">
+                            Keep your API key secure and never share it publicly. If compromised, regenerate immediately.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 
 
@@ -647,12 +1005,7 @@ const Dashboard = () => {
 
       {currentView === 'api-references' && <ApiReferences />}
 
-      {currentView === 'settings' && (
-        <div className="flex-1 p-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Settings</h1>
-          <p className="text-xl text-gray-600">Configure your application settings</p>
-        </div>
-      )}
+{currentView === 'settings' && <SettingsPage />}
 
       {/* Profile Modal */}
       <Profile isOpen={isProfileOpen} onClose={handleCloseProfile} />
