@@ -24,7 +24,8 @@ class OrchestratorAgent:
 
         # --- Step 1: Ingest data ---
         try:
-            docs: List[str] = await self.ingestor.ingest(source, query)
+            docs: List[str] = self.ingestor.ingest(source, query)
+
         except Exception as e:
             return {"error": f"Ingestion failed: {e}"}
 
