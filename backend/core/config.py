@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings
+from typing import Optional
 
 class Settings(BaseSettings):
     MONGO_URI: str
@@ -9,8 +10,13 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_ID: str
     GOOGLE_CLIENT_SECRET: str
     GOOGLE_REDIRECT_URI: str
+    GROQ_API_KEY: str
+    GROQ_MODEL: str
+
+    
 
     class Config:
         env_file = ".env"
+        extra = "ignore"
 
 settings = Settings()

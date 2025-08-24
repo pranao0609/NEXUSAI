@@ -10,6 +10,8 @@ python-dotenv
 google-auth
 google-auth-oauthlib
 requests
+email-validator
+python-multipart
 # Core LangChain + community loaders/tools
 langchain==0.2.16
 langchain-community==0.2.10
@@ -24,6 +26,8 @@ pypdf==4.2.0
 python-docx==1.1.2
 pandas==2.2.2
 openpyxl==3.1.4
+wikipedia
+arxiv
 
 
 # Search & Web Tools
