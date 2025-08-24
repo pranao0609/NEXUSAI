@@ -26,6 +26,7 @@ async def get_current_user(request: Request):
 
     try:
         payload = jwt.decode(token, settings.JWT_SECRET_KEY, algorithms=[settings.JWT_ALGORITHM])
+        print(payload)
         username: str = payload.get("sub")
         if username is None:
             raise HTTPException(status_code=401, detail="Invalid token payload")
@@ -38,4 +39,14 @@ async def get_current_user(request: Request):
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
 
+    # Convert ObjectId to str for the 'id' field and remove original _id
+    if "_id" in user:
+        user["id"] = str(user.pop("_id"))
+
+    # Securely remove the hashed password before returning the user object
+    if 'hashed_password' in user:
+        del user['hashed_password']
+        
+    if "name" not in user or user["name"] is None:
+        user["name"] = user.get("username", "Anonymous")
     return UserInDB(**user)

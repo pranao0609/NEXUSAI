@@ -128,7 +128,12 @@ def make_summarize_node(summarizer: SummarizerAgent, timeout_s: Optional[float] 
             return {"points": points}
         except Exception as e:
             logger.exception("[summarize] failed: %s", e)
-            return {"errors": [f"Summarization failed: {e}"]}
+            # Check if it's an authentication error (401)
+            if "401 Unauthorized" in str(e):
+                return {"errors": ["API authentication error: The AI service API key appears to be invalid or expired."], 
+                        "points": ["Unable to generate summary due to API authentication issues."]}
+            return {"errors": [f"Summarization failed: {e}"], 
+                    "points": ["Unable to generate summary due to technical issues."]}
     return summarize_node
 
 

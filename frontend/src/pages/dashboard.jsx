@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import axios from 'axios';
 import { 
   User, 
   Search, 
@@ -34,6 +36,7 @@ import Profile from '../components/profile';
 import PricingModal from '../components/PricingModal';
 
 // Settings Component
+// FIX: Removed 'flex-1 p-8' from the root div to avoid double padding.
 const SettingsPage = () => {
   const [activeSettingsTab, setActiveSettingsTab] = useState('profile');
   const [notifications, setNotifications] = useState({
@@ -69,7 +72,7 @@ const SettingsPage = () => {
   };
 
   return (
-    <div className="flex-1 p-8">
+    <div>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -218,7 +221,7 @@ const SettingsPage = () => {
               {/* Notifications Settings */}
               {activeSettingsTab === 'notifications' && (
                 <div>
-                  <div className="flex items-center space-x-3 mb-6">
+                 <div className="flex items-center space-x-3 mb-6">
                     <Bell className="w-6 h-6 text-[#7FA0A8]" />
                     <h2 className="text-xl font-semibold text-gray-900">Notification Preferences</h2>
                   </div>
@@ -259,7 +262,7 @@ const SettingsPage = () => {
               {/* Security Settings */}
               {activeSettingsTab === 'security' && (
                 <div>
-                  <div className="flex items-center space-x-3 mb-6">
+                 <div className="flex items-center space-x-3 mb-6">
                     <Shield className="w-6 h-6 text-[#7FA0A8]" />
                     <h2 className="text-xl font-semibold text-gray-900">Security Settings</h2>
                   </div>
@@ -370,7 +373,6 @@ const SettingsPage = () => {
                 </div>
               )}
 
-
             </div>
           </div>
         </div>
@@ -379,11 +381,10 @@ const SettingsPage = () => {
   );
 };
 
-
-
 // API References Component
+// FIX: Removed 'flex-1 p-8' from the root div to avoid double padding.
 const ApiReferences = () => {
-  const [copiedCode, setCopiedCode] = useState('');
+    const [copiedCode, setCopiedCode] = useState('');
   const [activeTab, setActiveTab] = useState('authentication');
 
   const copyToClipboard = (text, id) => {
@@ -465,9 +466,8 @@ print(agents)`
   };
 
   const [selectedLanguage, setSelectedLanguage] = useState('javascript');
-
   return (
-    <div className="flex-1 p-8">
+    <div>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -749,10 +749,35 @@ print(agents)`
   );
 };
 
+
 const Dashboard = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const navigate = useNavigate();
   const [currentView, setCurrentView] = useState('dashboard');
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const localUserData = localStorage.getItem('user');
+      if (localUserData) {
+        setUserData(JSON.parse(localUserData));
+        return;
+      }
+
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.get(`${API_BASE_URL}/auth/me`, { withCredentials: true });
+        localStorage.setItem('user', JSON.stringify(response.data));
+        setUserData(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user data, redirecting to login.');
+        navigate('/login');
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
 
   // Agent data
   const agents = [
@@ -833,8 +858,8 @@ const Dashboard = () => {
               <User className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1 text-left">
-              <h3 className="font-semibold text-white">John Doe</h3>
-              <p className="text-sm text-gray-300">Premium User</p>
+              <h3 className="font-semibold text-white">{userData ? userData.name : 'Guest'}</h3>
+              <p className="text-sm text-gray-300">{userData ? userData.subscription_plan || 'Free User' : '...'}</p>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
           </button>
@@ -898,41 +923,40 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Main Content - Conditional Rendering */}
-      {currentView === 'dashboard' && (
-        <div className="flex-1 p-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              Welcome back, <span className="text-[#7FA0A8]">John</span>! 👋
-            </h1>
-            <p className="text-xl text-gray-600">
-              Manage your AI agents and monitor their performance
-            </p>
-          </div>
+      {/* Main Content */}
+      {/* FIX: Moved conditional rendering inside this single main content wrapper */}
+      <div className="flex-1 p-8">
+        {currentView === 'dashboard' && (
+          <>
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">
+                Welcome back, <span className="text-[#7FA0A8]">{userData ? userData.name : 'Guest'}</span>! 👋
+              </h1>
+              <p className="text-xl text-gray-600">
+                Manage your AI agents and monitor their performance
+              </p>
+            </div>
 
-          {/* Agent Cards Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
-            {agents.map((agent) => (
-              <div
-                key={agent.id}
-                className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200"
-              >
-                {/* Background Gradient */}
-                <div className={`absolute inset-0 bg-gradient-to-r ${agent.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
-                
-                {/* Card Content */}
-                <div className="relative p-6">
-                  {/* Icon and Status */}
-                  <div className="flex items-center justify-between mb-4">
-                    <div className={`w-14 h-14 rounded-2xl ${agent.bgColor} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                      <agent.icon className={`w-7 h-7 bg-gradient-to-r ${agent.color} bg-clip-text text-transparent`} />
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                      <span className="text-sm font-medium text-green-600">{agent.status}</span>
-                    </div>
+            {/* Agent Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
+              {agents.map((agent) => (
+                <Link to="/chat" key={agent.id} className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200">
+                  {/* Background Gradient */}
+              <div className={`absolute inset-0 bg-gradient-to-r ${agent.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
+              
+              {/* Card Content */}
+              <div className="relative p-6">
+                {/* Icon and Status */}
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`w-14 h-14 rounded-2xl ${agent.bgColor} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                    <agent.icon className={`w-7 h-7 bg-gradient-to-r ${agent.color} bg-clip-text text-transparent`} />
                   </div>
+                  <div className="flex items-center space-x-1">
+                    <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                    <span className="text-sm font-medium text-green-600">{agent.status}</span>
+                  </div>
+                </div>
 
                   {/* Agent Name */}
                   <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#7FA0A8] transition-colors duration-300">
@@ -965,21 +989,21 @@ const Dashboard = () => {
 
                 {/* Animated Border */}
                 <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-[#7FA0A8] transition-all duration-300 opacity-0 group-hover:opacity-100" />
-              </div>
-            ))}
-          </div>
-
-          {/* Quick Stats Section */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="text-lg font-semibold text-gray-900">Total Agents</h4>
-                  <p className="text-3xl font-bold text-[#7FA0A8] mt-2">4</p>
-                </div>
-                <Brain className="w-12 h-12 text-[#7FA0A8] opacity-20" />
-              </div>
+                </Link>
+              ))}
             </div>
+
+            {/* Quick Stats Section */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+             <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="text-lg font-semibold text-gray-900">Total Agents</h4>
+                <p className="text-3xl font-bold text-[#7FA0A8] mt-2">4</p>
+              </div>
+              <Brain className="w-12 h-12 text-[#7FA0A8] opacity-20" />
+            </div>
+          </div>
 
             <div className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100">
               <div className="flex items-center justify-between">
@@ -1000,18 +1024,16 @@ const Dashboard = () => {
                 <Sparkles className="w-12 h-12 text-purple-500 opacity-20" />
               </div>
             </div>
-          </div>
-        </div>
-      )}
+            </div>
+          </>
+        )}
 
-      {currentView === 'api-references' && <ApiReferences />}
+        {currentView === 'api-references' && <ApiReferences />}
+        {currentView === 'settings' && <SettingsPage />}
+      </div>
 
-{currentView === 'settings' && <SettingsPage />}
-
-      {/* Profile Modal */}
-      <Profile isOpen={isProfileOpen} onClose={handleCloseProfile} />
-      
-      {/* Pricing Modal */}
+      {/* Modals remain at the end */}
+      <Profile isOpen={isProfileOpen} onClose={handleCloseProfile} userData={userData} />
       <PricingModal isOpen={isPricingOpen} onClose={handleClosePricing} />
     </div>
   );
