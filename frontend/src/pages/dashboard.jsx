@@ -16,9 +16,12 @@ import {
   BookOpen,
   Wifi
 } from 'lucide-react';
+import Profile from '../components/Profile'; // Import the Profile component
+import PricingModal from '../components/PricingModal'; // Import the Pricing component
 
 const Dashboard = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isPricingOpen, setIsPricingOpen] = useState(false);
 
   // Agent data
   const agents = [
@@ -69,9 +72,19 @@ const Dashboard = () => {
   ];
 
   const handleProfileClick = () => {
-    setIsProfileOpen(!isProfileOpen);
-    // TODO: Navigate to profile page or open profile modal
-    console.log('Profile clicked - will implement profile.jsx integration');
+    setIsProfileOpen(true);
+  };
+
+  const handleCloseProfile = () => {
+    setIsProfileOpen(false);
+  };
+
+  const handleUpgradeClick = () => {
+    setIsPricingOpen(true);
+  };
+
+  const handleClosePricing = () => {
+    setIsPricingOpen(false);
   };
 
   return (
@@ -116,16 +129,19 @@ const Dashboard = () => {
         </nav>
 
         {/* Bottom Section */}
-        <div className="absolute bottom-6 left-4 right-4">
-          <div className="bg-gradient-to-r from-[#7FA0A8] to-[#6A8B94] rounded-lg p-4">
-            <div className="flex items-center space-x-3">
-              <Sparkles className="w-6 h-6 text-white" />
+        <div className="absolute bottom-6 left-6 right-6 w-[200px]">
+          <button 
+            onClick={handleUpgradeClick}
+            className="w-full bg-gradient-to-r from-[#7FA0A8] to-[#6A8B94] rounded-lg p-3 hover:from-[#6A8B94] hover:to-[#7FA0A8] transition-all duration-300"
+          >
+            <div className="flex items-center space-x-2">
+              <Sparkles className="w-5 h-5 text-white" />
               <div>
-                <h4 className="text-white font-semibold">Upgrade Pro</h4>
-                <p className="text-white/80 text-sm">Unlock premium features</p>
+                <h4 className="text-white font-medium text-sm">Upgrade Pro</h4>
+                <p className="text-white/80 text-xs">Unlock premium features</p>
               </div>
             </div>
-          </div>
+          </button>
         </div>
       </div>
 
@@ -232,6 +248,12 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Profile Modal */}
+      <Profile isOpen={isProfileOpen} onClose={handleCloseProfile} />
+      
+      {/* Pricing Modal */}
+      <PricingModal isOpen={isPricingOpen} onClose={handleClosePricing} />
     </div>
   );
 };
