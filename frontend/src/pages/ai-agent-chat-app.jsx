@@ -101,7 +101,8 @@ const AiAgentChatApp = () => {
         let summaryText = "I couldn't find any relevant information.";
         
         if (responseData && responseData.docs && responseData.docs.length > 0) {
-          summaryText = responseData.docs[-1].metadata.summary;
+          // Use the first document (index 0) instead of -1 which is invalid in JavaScript
+          summaryText = responseData.docs[0].metadata.summary;
         }
         
         // Update the AI response with the actual data
@@ -112,20 +113,30 @@ const AiAgentChatApp = () => {
           return msg;
         }));
         
-        // Update agents status
+        // Update agents status to show failure
         setAgents(prev => prev.map(agent => {
-          if (agent.id === 3) return { ...agent, status: 'completed' };
-          if (agent.id === 4) return { ...agent, status: 'completed' };
+          if (agent.id === 2 || agent.id === 3) return { ...agent, status: 'failed' };
           return agent;
         }));
         
       } catch (error) {
         console.error('Error fetching data:', error);
         
+        let errorMessage = "I'm sorry, I encountered an error while processing your request. Please try again later.";
+        
+        // Check for specific error types
+        if (error.response) {
+          if (error.response.status === 401) {
+            errorMessage = "Authentication error: The API key for the AI service appears to be invalid or expired. Please contact the administrator.";
+          } else if (error.response.status === 500) {
+            errorMessage = "The server encountered an internal error. This might be due to an issue with the AI service. Please try again later.";
+          }
+        }
+        
         // Update the AI response with error message
         setMessages(prev => prev.map(msg => {
           if (msg.id === initialAiResponse.id) {
-            return { ...msg, text: "I'm sorry, I encountered an error while processing your request. Please try again later." };
+            return { ...msg, text: errorMessage };
           }
           return msg;
         }));
