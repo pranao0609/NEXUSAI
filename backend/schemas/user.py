@@ -2,7 +2,8 @@ from pydantic import BaseModel, EmailStr, Field
 from enum import Enum
 from typing import Optional
 import uuid
-from datetime import date
+from datetime import datetime
+
 
 class Role(str, Enum):
     user = "user"
@@ -15,17 +16,17 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
-    name: str
+    name: Optional[str] = None
 
 class UserInDB(UserBase):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     hashed_password: str | None = None
     role: Role = Role.user
-    name: str
+    name: Optional[str] = None
     credits_used: int = 0
     credits_remaining: int = 1000
     subscription_plan: Optional[str] = None
-    member_since: date = Field(default_factory=date.today)
+    member_since: datetime = Field(default_factory=datetime.utcnow)
 
     class Config:
         validate_by_name = True 
@@ -36,11 +37,11 @@ class UserOut(BaseModel):
     username: str
     email: str
     role: str
-    name: str
+    name: Optional[str] = None
     credits_used: int
     credits_remaining: int
     subscription_plan: Optional[str] = None
-    member_since: date
+    member_since: datetime
 
 class Token(BaseModel):
     access_token: str

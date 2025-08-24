@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { 
   User, 
   Search, 
@@ -22,6 +23,30 @@ import PricingModal from '../components/PricingModal'; // Import the Pricing com
 const Dashboard = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
+  const [userData, setUserData] = useState(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const localUserData = localStorage.getItem('user');
+      if (localUserData) {
+        setUserData(JSON.parse(localUserData));
+        return;
+      }
+
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.get(`${API_BASE_URL}/auth/me`, { withCredentials: true });
+        localStorage.setItem('user', JSON.stringify(response.data));
+        setUserData(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user data, redirecting to login.');
+        navigate('/login');
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
 
   // Agent data
   const agents = [
@@ -102,7 +127,7 @@ const Dashboard = () => {
             </div>
             <div className="flex-1 text-left">
               <h3 className="font-semibold text-white">{userData ? userData.name : 'Guest'}</h3>
-              <p className="text-sm text-gray-300">Premium User</p>
+              <p className="text-sm text-gray-300">{userData ? userData.subscription_plan || 'Free User' : '...'}</p>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
           </button>
@@ -160,10 +185,7 @@ const Dashboard = () => {
         {/* Agent Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-6">
           {agents.map((agent) => (
-            <div
-              key={agent.id}
-              className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200"
-            >
+            <Link to="/chat" key={agent.id} className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 hover:border-gray-200">
               {/* Background Gradient */}
               <div className={`absolute inset-0 bg-gradient-to-r ${agent.color} opacity-0 group-hover:opacity-5 transition-opacity duration-300`} />
               
@@ -211,7 +233,7 @@ const Dashboard = () => {
 
               {/* Animated Border */}
               <div className="absolute inset-0 rounded-2xl border-2 border-transparent group-hover:border-[#7FA0A8] transition-all duration-300 opacity-0 group-hover:opacity-100" />
-            </div>
+            </Link>
           ))}
         </div>
 
@@ -250,7 +272,7 @@ const Dashboard = () => {
       </div>
 
       {/* Profile Modal */}
-      <Profile isOpen={isProfileOpen} onClose={handleCloseProfile} />
+      <Profile isOpen={isProfileOpen} onClose={handleCloseProfile} userData={userData} />
       
       {/* Pricing Modal */}
       <PricingModal isOpen={isPricingOpen} onClose={handleClosePricing} />

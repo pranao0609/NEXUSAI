@@ -1,13 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Bot, CheckCircle, Clock, Circle } from 'lucide-react';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
 const AiAgentChatApp = () => {
-  const [messages, setMessages] = useState([
-    { id: 1, text: "Can you help me research the latest trends in renewable energy?", sender: 'user' },
-    { id: 2, text: "I'll help you research the latest trends in renewable energy. Let me gather the most current information for you.", sender: 'ai' },
-    { id: 3, text: "What are the top 3 emerging technologies?", sender: 'user' },
-    { id: 4, text: "Based on my research, here are the top 3 emerging technologies in renewable energy:\n\n1. Perovskite solar cells - offering higher efficiency at lower costs\n2. Floating offshore wind turbines - accessing deeper waters with stronger winds\n3. Green hydrogen production - storing renewable energy for industrial use", sender: 'ai' }
-  ]);
+  const [messages, setMessages] = useState([]);
+  const [userData, setUserData] = useState(null);
+  const navigate = useNavigate();
   
   const [inputValue, setInputValue] = useState('');
   const [agents, setAgents] = useState([
@@ -21,6 +20,28 @@ const AiAgentChatApp = () => {
   const [dots, setDots] = useState('');
 
   useEffect(() => {
+    const fetchUserData = async () => {
+      const localUserData = localStorage.getItem('user');
+      if (localUserData) {
+        setUserData(JSON.parse(localUserData));
+        return;
+      }
+
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.get(`${API_BASE_URL}/auth/me`, { withCredentials: true });
+        localStorage.setItem('user', JSON.stringify(response.data));
+        setUserData(response.data);
+      } catch (error) {
+        console.error('Failed to fetch user data, redirecting to login.');
+        navigate('/login');
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -31,25 +52,86 @@ const AiAgentChatApp = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     if (inputValue.trim()) {
-      const newMessage = {
+      const userMessage = {
         id: messages.length + 1,
         text: inputValue,
         sender: 'user'
       };
-      setMessages([...messages, newMessage]);
-      setInputValue('');
+      setMessages([...messages, userMessage]);
       
-      // Simulate AI response
-      setTimeout(() => {
-        const aiResponse = {
-          id: messages.length + 2,
-          text: "I'm processing your request and gathering the information you need. This will just take a moment.",
-          sender: 'ai'
-        };
-        setMessages(prev => [...prev, aiResponse]);
-      }, 1000);
+      // Add initial AI response
+      const initialAiResponse = {
+        id: messages.length + 2,
+        text: "I'm processing your request and gathering the information you need. This will just take a moment.",
+        sender: 'ai'
+      };
+      setMessages(prev => [...prev, initialAiResponse]);
+      
+      // Update agents status
+      setAgents(prev => prev.map(agent => {
+        if (agent.id === 1) return { ...agent, status: 'completed' };
+        if (agent.id === 2) return { ...agent, status: 'active' };
+        return { ...agent, status: 'pending' };
+      }));
+      
+      try {
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+        const response = await axios.post(`${API_BASE_URL}/pipeline`, null, {
+          params: {
+            source: 'wiki',
+            query: inputValue,
+            title: 'Generated Report',
+            audience: 'General'
+          },
+          withCredentials: true,
+          responseType: 'json'
+        });
+        
+        // Update agents status
+        setAgents(prev => prev.map(agent => {
+          if (agent.id === 2) return { ...agent, status: 'completed' };
+          if (agent.id === 3) return { ...agent, status: 'active' };
+          return agent;
+        }));
+        
+        // Get the first summary from the response
+        const responseData = response.data;
+        let summaryText = "I couldn't find any relevant information.";
+        
+        if (responseData && responseData.docs && responseData.docs.length > 0) {
+          summaryText = responseData.docs[-1].metadata.summary;
+        }
+        
+        // Update the AI response with the actual data
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === initialAiResponse.id) {
+            return { ...msg, text: summaryText };
+          }
+          return msg;
+        }));
+        
+        // Update agents status
+        setAgents(prev => prev.map(agent => {
+          if (agent.id === 3) return { ...agent, status: 'completed' };
+          if (agent.id === 4) return { ...agent, status: 'completed' };
+          return agent;
+        }));
+        
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        
+        // Update the AI response with error message
+        setMessages(prev => prev.map(msg => {
+          if (msg.id === initialAiResponse.id) {
+            return { ...msg, text: "I'm sorry, I encountered an error while processing your request. Please try again later." };
+          }
+          return msg;
+        }));
+      }
+      
+      setInputValue('');
     }
   };
 
@@ -77,7 +159,7 @@ const AiAgentChatApp = () => {
           <h1 className="text-xl font-semibold text-gray-800">AI Agent Assistant</h1>
         </div>
         <div className="flex items-center space-x-3">
-          <span className="text-sm text-gray-600">Sarah Chen</span>
+          <span className="text-sm text-gray-600">{userData?.username || 'User'}</span>
           <div className="w-9 h-9 bg-gradient-to-br from-purple-400 to-pink-400 rounded-full flex items-center justify-center">
             <User className="w-5 h-5 text-white" />
           </div>

@@ -24,6 +24,7 @@ export default function LoginComponent({ onClose }) {
         const response = await axios.get(`${API_BASE_URL}/auth/me`, { withCredentials: true });
 
         if (response.data && response.data.username) {
+          localStorage.setItem('user', JSON.stringify(response.data));  
           // Already authenticated → go to dashboard
           navigate('/dashboard');
         }

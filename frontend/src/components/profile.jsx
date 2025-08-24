@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+
 import { 
   User, 
   Mail, 
@@ -13,29 +14,36 @@ import {
   Star
 } from 'lucide-react';
 
-const Profile = ({ isOpen, onClose }) => {
+const Profile = ({ isOpen, onClose, userData: initialUserData }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [userInfo, setUserInfo] = useState({
-    name: 'John Doe',
-    email: 'john.doe@example.com',
-    joinDate: '2024-01-15',
+  const [userInfo, setUserInfo] = useState(initialUserData || {
+    name: 'Guest',
+    email: 'guest@example.com',
+    joinDate: new Date().toISOString(),
     avatar: null
   });
+
+  useEffect(() => {
+    if (initialUserData) {
+      setUserInfo(initialUserData);
+    }
+  }, [initialUserData]);
 
   // Mock user data - replace with real data from your backend
   const userData = {
     ...userInfo,
     credits: {
-      used: 750,
-      total: 1000,
-      percentage: 75
+      used: userInfo.credits_used || 0,
+      total: (userInfo.credits_used || 0) + (userInfo.credits_remaining || 1000),
+      percentage: userInfo.credits_remaining ? (userInfo.credits_used / ((userInfo.credits_used || 0) + (userInfo.credits_remaining || 1000))) * 100 : 0
     },
     subscription: {
-      plan: 'Premium',
-      status: 'Active',
-      nextBilling: '2025-09-25',
-      price: '$29.99/month'
-    }
+      plan: userInfo.subscription_plan || 'Free',
+      status: userInfo.subscription_plan ? 'Active' : 'Inactive',
+      nextBilling: 'N/A',
+      price: 'N/A'
+    },
+    joinDate: userInfo.member_since || new Date().toISOString()
   };
 
   const handleLogout = () => {

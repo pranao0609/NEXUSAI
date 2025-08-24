@@ -32,7 +32,7 @@ app = FastAPI(
 # --- CORS (tighten origins in production) ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # TODO: restrict in prod (e.g., ["https://yourdomain.com"])
+    allow_origins=["http://localhost:5173"],  # TODO: restrict in prod (e.g., ["https://yourdomain.com"])
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,7 +64,7 @@ async def unhandled_exception_handler(_, exc: Exception):
 
 @app.post("/pipeline", tags=["pipeline"])
 async def pipeline_endpoint(
-    source: str = Query(..., description="ingestion source key e.g. wiki|web|arxiv|csv"),
+    source: str = Query("wiki", description="ingestion source key e.g. wiki|web|arxiv|csv"),
     query: str = Query(..., description="search/topic query for ingestion"),
     title: str = Query("Generated Report", description="report title"),
     audience: str = Query("General", description="target audience"),
