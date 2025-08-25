@@ -209,7 +209,7 @@ const AiAgentChatApp = () => {
 
         const response = await axios.post(`${API_BASE_URL}/pipeline`, formData, {
           withCredentials: true,
-          responseType: 'json',
+          responseType: 'blob',  // Changed to blob to handle both JSON and PDF
           // DO NOT set Content-Type manually; axios/browser will handle it for FormData
         });
         
@@ -284,94 +284,215 @@ const AiAgentChatApp = () => {
   );
 };
 
-        const responseData = response.data.result;
-        console.log(responseData)
+        // Check if the response is a PDF file
+        const contentType = response.headers['content-type'];
+        
+        if (contentType === 'application/pdf') {
+          // Handle PDF response
+          const pdfBlob = new Blob([response.data], { type: 'application/pdf' });
+          const pdfUrl = URL.createObjectURL(pdfBlob);
+          
+          // Update the messages state with PDF download link
+          setMessages(prev => prev.map(msg => {
+            if (msg.id === initialAiResponse.id) {
+              return {
+                ...msg,
+                text: "I've generated a PDF report based on your query. You can view or download it using the button below.",
+                pdfUrl: pdfUrl,
+                isPdf: true
+              };
+            }
+            return msg;
+          }));
+          
+          // Update agent statuses
+          setAgents(prev => prev.map(agent => {
+            if (agent.id === 3) return { ...agent, status: 'completed' };
+            if (agent.id === 4) return { ...agent, status: 'completed' };
+            return agent;
+          }));
+          
+          return; // Exit early as we've handled the PDF response
+        }
+        
+        // Handle JSON response
+        const jsonText = await response.data.text();
+        const jsonData = JSON.parse(jsonText);
+        const responseData = jsonData.result;
+        
+        console.log(responseData);
+
         let formattedResponse = "I couldn't find any relevant information.";
-        let pdfDownloadUrl = null;
-        let i=0;
+        let i = 0;
+        
+        // Format the response first
         if (responseData && responseData.docs && responseData.docs.length > 0) {
-          // Format the response with all available metadata
           const doc = responseData.docs[i];
+          console.log(doc);
           i++;
-          formattedResponse = `## ${doc.metadata.title || 'Generated Report'}\n\n`;
 
+          // Build the formatted response with proper markdown structure
+          formattedResponse = `# ${doc.metadata.title || 'Generated Report'}\n\n`;
+
+          // Add summary section with better formatting
           if (doc.metadata.summary) {
-            formattedResponse += `### Summary\n${doc.metadata.summary}\n\n`;
+            formattedResponse += ` Executive Summary\n\n`;
+            formattedResponse += `${doc.metadata.summary}\n\n`;
+            formattedResponse += `---\n\n`;
           }
 
-          // Add main points if available
+          // Add key points with proper bullet formatting
           if (responseData.points && responseData.points.length > 0) {
-            formattedResponse += `### Key Points\n`;
-            responseData.points.slice(1).forEach(point => {
-              formattedResponse += `- ${point}\n`;
+            formattedResponse += `## 🔑 Key Points\n\n`;
+
+            // Skip the first point and format the rest as bullets
+            const keyPoints = responseData.points.slice(1);
+            keyPoints.forEach((point, index) => {
+              // Clean up the point text and ensure proper formatting
+              const cleanPoint = point.trim().replace(/^[-•*]\s*/, '');
+              formattedResponse += `• **${cleanPoint}**\n\n`;
             });
-            formattedResponse += '\n';
+
+            formattedResponse += `---\n\n`;
           }
 
-          // Add report sections if available
+          // Add report sections with enhanced formatting
           if (responseData.report) {
             if (responseData.report.introduction) {
-              formattedResponse += `### Introduction\n${responseData.report.introduction}\n\n`;
+              formattedResponse += `## 🚀 Introduction\n\n`;
+              formattedResponse += `${responseData.report.introduction}\n\n`;
             }
 
             if (responseData.report.conclusion) {
-              formattedResponse += `### Conclusion\n${responseData.report.conclusion}\n\n`;
+              formattedResponse += `## 💡 Conclusion\n\n`;
+              formattedResponse += `${responseData.report.conclusion}\n\n`;
             }
           }
 
-          // Add source information
+          // Add detailed analysis if available
+          if (responseData.analysis) {
+            formattedResponse += `## 📊 Detailed Analysis\n\n`;
+
+            if (Array.isArray(responseData.analysis)) {
+              responseData.analysis.forEach((item, index) => {
+                formattedResponse += `### ${index + 1}. ${item.title || `Analysis Point ${index + 1}`}\n\n`;
+                formattedResponse += `${item.content || item}\n\n`;
+              });
+            } else {
+              formattedResponse += `${responseData.analysis}\n\n`;
+            }
+          }
+
+          // Add recommendations if available
+          if (responseData.recommendations && responseData.recommendations.length > 0) {
+            formattedResponse += `## 🎯 Recommendations\n\n`;
+
+            responseData.recommendations.forEach((recommendation, index) => {
+              formattedResponse += `${index + 1}. **${recommendation.title || `Recommendation ${index + 1}`}**\n`;
+              formattedResponse += `   ${recommendation.description || recommendation}\n\n`;
+            });
+
+            formattedResponse += `---\n\n`;
+          }
+
+          // Add methodology if available
+          if (responseData.methodology) {
+            formattedResponse += `## 🔬 Methodology\n\n`;
+            formattedResponse += `${responseData.methodology}\n\n`;
+          }
+
+          // Add data sources with better formatting
           if (responseData.text_sources && responseData.text_sources.length > 0) {
-            formattedResponse += `### Sources\n${responseData.text_sources.join('\n')}`;
+            formattedResponse += `## 📚 Sources & References\n\n`;
+
+            responseData.text_sources.forEach((source, index) => {
+              // Format sources as numbered list with better styling
+              formattedResponse += `${index + 1}. ${source}\n`;
+            });
+
+            formattedResponse += `\n`;
           }
-        }
-        // Check for PDF path in response
-        if (responseData && responseData.pdf_path) {
-          pdfDownloadUrl = responseData.pdf_path;
+
+          // Add metadata footer if available
+          if (doc.metadata.author || doc.metadata.date || doc.metadata.version) {
+            formattedResponse += `---\n\n`;
+            formattedResponse += `### 📄 Document Information\n\n`;
+
+            if (doc.metadata.author) {
+              formattedResponse += `**Author:** ${doc.metadata.author}  \n`;
+            }
+            if (doc.metadata.date) {
+              formattedResponse += `**Date:** ${doc.metadata.date}  \n`;
+            }
+            if (doc.metadata.version) {
+              formattedResponse += `**Version:** ${doc.metadata.version}  \n`;
+            }
+
+            formattedResponse += `\n`;
+          }
         }
 
-        setMessages(prev => prev.map(msg => {
-          if (msg.id === initialAiResponse.id) {
-            let textWithPdf = formattedResponse;
-            if (pdfDownloadUrl) {
-              textWithPdf += `\n\n[Download PDF Report](${pdfDownloadUrl})`;
+        // Check if there's a PDF path in the response (for verbose mode)
+        if (jsonData.pdf_path) {
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+          const pdfFilename = jsonData.pdf_path.split('/').pop();
+          const pdfUrl = `${API_BASE_URL}/static/${pdfFilename}`;
+          
+          // Update the messages state with PDF download link and formatted response
+          setMessages(prev => prev.map(msg => {
+            if (msg.id === initialAiResponse.id) {
+              return {
+                ...msg,
+                text: formattedResponse + "\n\nI've also generated a PDF report that you can view or download using the buttons below.",
+                pdfUrl: pdfUrl,
+                pdfFilename: pdfFilename,
+                isPdf: true,
+                isMarkdown: true // Add flag to indicate markdown formatting
+              };
             }
-            return { ...msg, text: textWithPdf };
-          }
-          return msg;
-        }));
-        
+            return msg;
+          }));
+        } else {
+          // Update the messages state with just the formatted response (no PDF)
+          setMessages(prev => prev.map(msg => {
+            if (msg.id === initialAiResponse.id) {
+              return {
+                ...msg,
+                text: formattedResponse,
+                isMarkdown: true // Add flag to indicate markdown formatting
+              };
+            }
+            return msg;
+          }));
+        }
+
+        // Update agent statuses
         setAgents(prev => prev.map(agent => {
           if (agent.id === 3) return { ...agent, status: 'completed' };
           if (agent.id === 4) return { ...agent, status: 'active' };
           return agent;
         }));
-        
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        
-        let errorMessage = "I'm sorry, I encountered an error while processing your request. Please try again later.";
-        
-        if (error.response) {
-          if (error.response.status === 401) {
-            errorMessage = "Authentication error: The API key for the AI service appears to be invalid or expired. Please contact the administrator.";
-          } else if (error.response.status === 500) {
-            errorMessage = "The server encountered an internal error. This might be due to an issue with the AI service. Please try again later.";
-          }
-        }
-        
+      }
+      catch (error) {
+        console.error('Error processing request:', error);
+        // Update the message to show error
         setMessages(prev => prev.map(msg => {
           if (msg.id === initialAiResponse.id) {
-            return { ...msg, text: errorMessage };
+            return {
+              ...msg,
+              text: "Sorry, there was an error processing your request. Please try again.",
+              isError: true
+            };
           }
           return msg;
         }));
         
+        // Update agent statuses to show failure
         setAgents(prev => prev.map(agent => {
-          if (agent.id === 2 || agent.id === 3) return { ...agent, status: 'failed' };
+          if (agent.status === 'active') return { ...agent, status: 'failed' };
           return agent;
         }));
       }
-   
       
       setInputValue('');
       setSelectedFile(null);
@@ -542,6 +663,31 @@ const AiAgentChatApp = () => {
                       }`}>
                         {message.text}
                       </p>
+                      {message.isPdf && message.pdfUrl && (
+                        <div className="mt-4 flex flex-col space-y-2">
+                          <a 
+                            href={message.pdfUrl} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                            </svg>
+                            View PDF Report
+                          </a>
+                          <a 
+                            href={message.pdfUrl ? `${import.meta.env.VITE_API_BASE_URL}/download-pdf/${message.pdfFilename || 'report.pdf'}` : '#'} 
+                            className="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                            Download PDF Report
+                          </a>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
