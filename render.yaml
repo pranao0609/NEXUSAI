@@ -1,0 +1,33 @@
+services:
+  - type: web
+    name: fastapi-backend
+    env: python
+    region: mumbai       # Changed to Mumbai
+    branch: main         # Branch to deploy from
+    plan: starter        # Free tier
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: MONGO_URI
+        value: ${MONGO_URI}
+      - key: DATABASE_NAME
+        value: ${DATABASE_NAME}
+      - key: JWT_SECRET_KEY
+        value: ${JWT_SECRET_KEY}
+      - key: JWT_ALGORITHM
+        value: ${JWT_ALGORITHM}
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: ${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - key: GOOGLE_CLIENT_ID
+        value: ${GOOGLE_CLIENT_ID}
+      - key: GOOGLE_CLIENT_SECRET
+        value: ${GOOGLE_CLIENT_SECRET}
+      - key: GOOGLE_REDIRECT_URI
+        value: ${GOOGLE_REDIRECT_URI}
+      - key: GROQ_API_KEY
+        value: ${GROQ_API_KEY}
+      - key: GROQ_MODEL
+        value: ${GROQ_MODEL}
+      - key: FRONTEND_URL
+        value: ${FRONTEND_URL}
+    autoDeploy: true
