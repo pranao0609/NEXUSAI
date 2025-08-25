@@ -8,6 +8,9 @@ from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.websockets import WebSocket, WebSocketDisconnect
+from fastapi import UploadFile, File, Form , Depends
+from typing import Optional
+from utils.dependencies import get_current_user
 import json
 import asyncio
 from datetime import datetime
@@ -143,11 +146,13 @@ async def unhandled_exception_handler(_, exc: Exception):
 
 @app.post("/pipeline", tags=["pipeline"])
 async def pipeline_endpoint(
-    source: str = Query("wiki", description="ingestion source key e.g. wiki|web|arxiv|csv"),
-    query: str = Query(..., description="search/topic query for ingestion"),
-    title: str = Query("Generated Report", description="report title"),
-    audience: str = Query("General", description="target audience"),
-    verbose: bool = Query(False, description="enable verbose logging and agent thinking"),
+    source: str = Form("wiki", description="ingestion source key e.g. wiki|web|arxiv|csv"),
+    query: str = Form(" ", description="search/topic query for ingestion"),
+    title: str = Form("Generated Report", description="report title"),
+    file_content: Optional[UploadFile] = None,  # optional
+    audience: str = Form("General", description="target audience"),
+    verbose: bool = Form(False, description="enable verbose logging and agent thinking"),
+    user: dict = Depends(get_current_user),
 ) -> Any:
     """
     Runs the full multi-agent pipeline (LangGraph powered):
@@ -158,7 +163,8 @@ async def pipeline_endpoint(
       
     Now with verbose agent thinking and removed source parameter.
     """
-    session_id = f"session-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+    print(query)
+    session_id = f"session-{user.id}"
     
     # Clear previous thoughts for this session
     if session_id in agent_thoughts:
@@ -176,7 +182,14 @@ async def pipeline_endpoint(
                 "audience": audience,
                 "session_id": session_id
             })
-
+        file_text = ""
+        if file_content:
+            # Read bytes and decode to string
+            content_bytes = await file_content.read()
+            file_text = content_bytes.decode("utf-8", errors="ignore")
+    
+            # Reset pointer in case file is read again later
+            await file_content.seek(0)
         # Input state (removed source field)
         input_state = {
             "query": query,
@@ -184,6 +197,7 @@ async def pipeline_endpoint(
             "audience": audience,
             "verbose": verbose,
             "session_id": session_id,
+            "file_content": file_text,
         }
 
         # Add thinking callback to pipeline config if verbose

@@ -16,36 +16,35 @@ import {
 
 const Profile = ({ isOpen, onClose, userData: initialUserData }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [userInfo, setUserInfo] = useState(initialUserData || {
-    name: 'Guest',
-    email: 'guest@example.com',
-    joinDate: new Date().toISOString(),
-    avatar: null
-  });
+  const storedUser = localStorage.getItem('user');
+  
+const userInfo = storedUser
+  ? JSON.parse(storedUser)
+  : {
+      name: 'Guest',
+      email: 'guest@example.com',
+      joinDate: new Date().toISOString(),
+      avatar: null
+    };
 
-  useEffect(() => {
-    if (initialUserData) {
-      setUserInfo(initialUserData);
-    }
-  }, [initialUserData]);
-
-  // Mock user data - replace with real data from your backend
-  const userData = {
-    ...userInfo,
-    credits: {
-      used: userInfo.credits_used || 0,
-      total: (userInfo.credits_used || 0) + (userInfo.credits_remaining || 1000),
-      percentage: userInfo.credits_remaining ? (userInfo.credits_used / ((userInfo.credits_used || 0) + (userInfo.credits_remaining || 1000))) * 100 : 0
-    },
-    subscription: {
-      plan: userInfo.subscription_plan || 'Free',
-      status: userInfo.subscription_plan ? 'Active' : 'Inactive',
-      nextBilling: 'N/A',
-      price: 'N/A'
-    },
-    joinDate: userInfo.member_since || new Date().toISOString()
-  };
-
+// Mock user data - replace with real data from your backend
+const userData = {
+  ...userInfo,
+  credits: {
+    used: userInfo.credits_used || 0,
+    total: (userInfo.credits_used || 0) + (userInfo.credits_remaining || 1000),
+    percentage: userInfo.credits_remaining
+      ? (userInfo.credits_used / ((userInfo.credits_used || 0) + (userInfo.credits_remaining || 1000))) * 100
+      : 0
+  },
+  subscription: {
+    plan: userInfo.subscription_plan || 'Free',
+    status: userInfo.subscription_plan ? 'Active' : 'Inactive',
+    nextBilling: 'N/A',
+    price: 'N/A'
+  },
+  joinDate: userInfo.member_since || new Date().toISOString()
+};
   const handleLogout = () => {
     // Add your logout logic here
     console.log('Logging out...');

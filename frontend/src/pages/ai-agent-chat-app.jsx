@@ -11,7 +11,8 @@ import {
   Settings,
   MessageSquare,
   Trash2,
-  Search
+  Search,
+  Paperclip
 } from 'lucide-react';
 // Remove these imports and handle them in your actual implementation:
  import axios from 'axios';
@@ -27,6 +28,8 @@ const AiAgentChatApp = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [currentChatId, setCurrentChatId] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const fileInputRef = useRef(null);
   
    const navigate = useNavigate(); // Uncomment when using react-router-dom
   
@@ -113,12 +116,23 @@ const AiAgentChatApp = () => {
     setAgents(prev => prev.map(agent => ({ ...agent, status: 'pending' })));
   };
 
+  const handleFileSelect = (e) => {
+    if (e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const handlePaperclipClick = () => {
+    fileInputRef.current.click();
+  };
+
   const handleSend = async () => {
-    if (inputValue.trim()) {
+    if (inputValue.trim() || selectedFile) {
       const userMessage = {
         id: messages.length + 1,
         text: inputValue,
-        sender: 'user'
+        sender: 'user',
+        file: selectedFile ? selectedFile.name : null
       };
       setMessages([...messages, userMessage]);
       
@@ -175,19 +189,28 @@ const AiAgentChatApp = () => {
         }, 2000);
       }, 1000);
       
+
      
       // Uncomment for actual API implementation:
       try {
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-        const response = await axios.post(`${API_BASE_URL}/pipeline`, null, {
-          params: {
-            source: 'wiki',
-            query: inputValue,
-            title: 'Generated Report',
-            audience: 'General'
-          },
+        
+        // Create form data for file upload
+        const formData = new FormData();
+        if (selectedFile) {
+          formData.append('file_content', selectedFile);
+        }
+
+        // You can also append query params to FormData if you want, or keep them in URL params
+        formData.append('query', inputValue);
+        formData.append('title', 'Generated Report');
+        formData.append('audience', 'General');
+        formData.append('source', 'wiki');
+
+        const response = await axios.post(`${API_BASE_URL}/pipeline`, formData, {
           withCredentials: true,
-          responseType: 'json'
+          responseType: 'json',
+          // DO NOT set Content-Type manually; axios/browser will handle it for FormData
         });
         
         setAgents(prev => prev.map(agent => {
@@ -195,17 +218,129 @@ const AiAgentChatApp = () => {
           if (agent.id === 3) return { ...agent, status: 'active' };
           return agent;
         }));
-        
-        const responseData = response.data;
-        let summaryText = "I couldn't find any relevant information.";
-        
+
+        const renderResponse = (responseData) => {
+  if (!responseData || !responseData.docs || responseData.docs.length === 0) {
+    return <p className="text-gray-500 italic">I couldn't find any relevant information.</p>;
+  }
+
+  const doc = responseData.docs[0];
+
+  return (
+    <div className="space-y-4">
+      {/* Title */}
+      <h2 className="text-2xl font-bold text-blue-700">{doc.metadata.title || 'Generated Report'}</h2>
+
+      {/* Summary */}
+      {doc.metadata.summary && (
+        <div>
+          <h3 className="text-xl font-semibold text-indigo-600">Summary</h3>
+          <p className="text-gray-800">{doc.metadata.summary}</p>
+        </div>
+      )}
+
+      {/* Key Points */}
+      {responseData.points && responseData.points.length > 0 && (
+        <div>
+          <h3 className="text-xl font-semibold text-green-600">Key Points</h3>
+          <ul className="list-disc list-inside space-y-1">
+            {responseData.points.map((point, idx) => (
+              <li key={idx} className="text-gray-700">{point}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Report Sections */}
+      {responseData.report && (
+        <>
+          {responseData.report.introduction && (
+            <div>
+              <h3 className="text-xl font-semibold text-purple-600">Introduction</h3>
+              <p className="text-gray-800">{responseData.report.introduction}</p>
+            </div>
+          )}
+          {responseData.report.conclusion && (
+            <div>
+              <h3 className="text-xl font-semibold text-purple-600">Conclusion</h3>
+              <p className="text-gray-800">{responseData.report.conclusion}</p>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Sources */}
+      {responseData.text_sources && responseData.text_sources.length > 0 && (
+        <div>
+          <h3 className="text-xl font-semibold text-yellow-700">Sources</h3>
+          <ul className="list-disc list-inside space-y-1 text-gray-600">
+            {responseData.text_sources.map((src, idx) => (
+              <li key={idx}>{src}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+};
+
+        const responseData = response.data.result;
+        console.log(responseData)
+        let formattedResponse = "I couldn't find any relevant information.";
+        let i=0;
         if (responseData && responseData.docs && responseData.docs.length > 0) {
-          summaryText = responseData.docs[0].metadata.summary;
+          // Format the response with all available metadata
+          const doc = responseData.docs[i];
+          i++;
+          formattedResponse = `## ${doc.metadata.title || 'Generated Report'}
+
+`;
+
+          if (doc.metadata.summary) {
+            formattedResponse += `### Summary
+${doc.metadata.summary}
+
+`;
+          }
+
+          // Add main points if available
+          if (responseData.points && responseData.points.length > 0) {
+            formattedResponse += `### Key Points
+`;
+            responseData.points.slice(1).forEach(point => {
+              formattedResponse += `- ${point}
+`;
+            });
+            formattedResponse += '\n';
+          }
+
+          // Add report sections if available
+          if (responseData.report) {
+            if (responseData.report.introduction) {
+              formattedResponse += `### Introduction
+${responseData.report.introduction}
+
+`;
+            }
+
+            if (responseData.report.conclusion) {
+              formattedResponse += `### Conclusion
+${responseData.report.conclusion}
+
+`;
+            }
+          }
+
+          // Add source information
+          if (responseData.text_sources && responseData.text_sources.length > 0) {
+            formattedResponse += `### Sources
+${responseData.text_sources.join('\n')}`;
+          }
         }
-        
+
         setMessages(prev => prev.map(msg => {
           if (msg.id === initialAiResponse.id) {
-            return { ...msg, text: summaryText };
+            return { ...msg, text: formattedResponse };
           }
           return msg;
         }));
@@ -244,6 +379,7 @@ const AiAgentChatApp = () => {
    
       
       setInputValue('');
+      setSelectedFile(null);
     }
   };
 
@@ -276,8 +412,8 @@ const AiAgentChatApp = () => {
               <User className="w-6 h-6 text-white" />
             </div>
             <div className="flex-1 text-left">
-              <h3 className="font-semibold text-white">John Doe</h3>
-              <p className="text-sm text-gray-300">Premium User</p>
+              <h3 className="font-semibold text-white">{userData?.name || 'Guest User'}</h3>
+              <p className="text-sm text-gray-300">{userData?.role || 'Free User'}</p>
             </div>
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-white transition-colors" />
           </button>
@@ -323,12 +459,15 @@ const AiAgentChatApp = () => {
                         {chat.timestamp}
                       </p>
                     </div>
-                    <button
+                    <span
                       onClick={(e) => handleDeleteChat(chat.id, e)}
-                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500 rounded transition-all ml-2"
+                      className="opacity-0 group-hover:opacity-100 p-1 hover:bg-red-500 rounded transition-all ml-2 cursor-pointer"
+                      role="button"
+                      aria-label="Delete chat"
+                      tabIndex="0"
                     >
                       <Trash2 className="w-3 h-3" />
-                    </button>
+                    </span>
                   </div>
                 </button>
               ))}
@@ -419,14 +558,39 @@ const AiAgentChatApp = () => {
           {/* Input Area */}
           <div className="border-t border-gray-200 px-6 py-4 bg-white">
             <div className="flex items-center space-x-3">
-              <input
-                type="text"
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                placeholder="Type your message..."
-                className="flex-1 px-4 py-3 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-              />
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                  placeholder="Type your message..."
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all pr-10"
+                />
+                <button 
+                  onClick={handlePaperclipClick}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-blue-500 transition-colors"
+                >
+                  <Paperclip className="w-5 h-5" />
+                </button>
+                <input 
+                  type="file" 
+                  ref={fileInputRef} 
+                  onChange={handleFileSelect} 
+                  className="hidden" 
+                />
+              </div>
+              {selectedFile && (
+                <div className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full text-xs flex items-center">
+                  <span className="truncate max-w-[100px]">{selectedFile.name}</span>
+                  <button 
+                    onClick={() => setSelectedFile(null)} 
+                    className="ml-1 text-blue-500 hover:text-blue-700"
+                  >
+                    ×
+                  </button>
+                </div>
+              )}
               <button
                 onClick={handleSend}
                 className="w-11 h-11 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors shadow-lg hover:shadow-xl transform hover:scale-105 transition-transform"
@@ -469,6 +633,13 @@ const AiAgentChatApp = () => {
                       </h3>
                     </div>
                     <p className="text-sm text-gray-500 ml-7">{agent.description}</p>
+                    {agent.status === 'active' && (
+                      <div className="mt-2 ml-7 text-xs text-gray-400">
+                        {agent.logs?.map((log, index) => (
+                          <p key={index}>{log}</p>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {agent.status === 'active' && (
                     <div className="flex items-center space-x-1 ml-3">
