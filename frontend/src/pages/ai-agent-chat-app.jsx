@@ -287,29 +287,23 @@ const AiAgentChatApp = () => {
         const responseData = response.data.result;
         console.log(responseData)
         let formattedResponse = "I couldn't find any relevant information.";
+        let pdfDownloadUrl = null;
         let i=0;
         if (responseData && responseData.docs && responseData.docs.length > 0) {
           // Format the response with all available metadata
           const doc = responseData.docs[i];
           i++;
-          formattedResponse = `## ${doc.metadata.title || 'Generated Report'}
-
-`;
+          formattedResponse = `## ${doc.metadata.title || 'Generated Report'}\n\n`;
 
           if (doc.metadata.summary) {
-            formattedResponse += `### Summary
-${doc.metadata.summary}
-
-`;
+            formattedResponse += `### Summary\n${doc.metadata.summary}\n\n`;
           }
 
           // Add main points if available
           if (responseData.points && responseData.points.length > 0) {
-            formattedResponse += `### Key Points
-`;
+            formattedResponse += `### Key Points\n`;
             responseData.points.slice(1).forEach(point => {
-              formattedResponse += `- ${point}
-`;
+              formattedResponse += `- ${point}\n`;
             });
             formattedResponse += '\n';
           }
@@ -317,30 +311,31 @@ ${doc.metadata.summary}
           // Add report sections if available
           if (responseData.report) {
             if (responseData.report.introduction) {
-              formattedResponse += `### Introduction
-${responseData.report.introduction}
-
-`;
+              formattedResponse += `### Introduction\n${responseData.report.introduction}\n\n`;
             }
 
             if (responseData.report.conclusion) {
-              formattedResponse += `### Conclusion
-${responseData.report.conclusion}
-
-`;
+              formattedResponse += `### Conclusion\n${responseData.report.conclusion}\n\n`;
             }
           }
 
           // Add source information
           if (responseData.text_sources && responseData.text_sources.length > 0) {
-            formattedResponse += `### Sources
-${responseData.text_sources.join('\n')}`;
+            formattedResponse += `### Sources\n${responseData.text_sources.join('\n')}`;
           }
+        }
+        // Check for PDF path in response
+        if (responseData && responseData.pdf_path) {
+          pdfDownloadUrl = responseData.pdf_path;
         }
 
         setMessages(prev => prev.map(msg => {
           if (msg.id === initialAiResponse.id) {
-            return { ...msg, text: formattedResponse };
+            let textWithPdf = formattedResponse;
+            if (pdfDownloadUrl) {
+              textWithPdf += `\n\n[Download PDF Report](${pdfDownloadUrl})`;
+            }
+            return { ...msg, text: textWithPdf };
           }
           return msg;
         }));
