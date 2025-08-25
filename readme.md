@@ -24,12 +24,4 @@ This application is ideal for educational purposes, demonstrating the integratio
 
 ---
 
-## 📁 Project Structure
-T052-Techworm_Nexus/
-├── backend/ # FastAPI backend
-│ ├── main.py # Entry point for FastAPI application
-│ └── ... # Additional backend files
-└── frontend/ # React frontend
-├── public/ # Public assets
-├── src/ # React components and logic
-└── ... # Additional frontend files
+
