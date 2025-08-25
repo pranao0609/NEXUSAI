@@ -14,8 +14,8 @@ import {
   Search
 } from 'lucide-react';
 // Remove these imports and handle them in your actual implementation:
-// import axios from 'axios';
-// import { useNavigate } from 'react-router-dom';
+ import axios from 'axios';
+ import { useNavigate } from 'react-router-dom';
 import Profile from '../components/profile';
 import PricingModal from '../components/PricingModal';
 
@@ -28,7 +28,7 @@ const AiAgentChatApp = () => {
   const [isPricingOpen, setIsPricingOpen] = useState(false);
   const [currentChatId, setCurrentChatId] = useState(null);
   
-  // const navigate = useNavigate(); // Uncomment when using react-router-dom
+   const navigate = useNavigate(); // Uncomment when using react-router-dom
   
   const [inputValue, setInputValue] = useState('');
   const [agents, setAgents] = useState([
@@ -43,12 +43,8 @@ const AiAgentChatApp = () => {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      // Simulate user data for demo - replace with actual API call
-      const mockUserData = { name: "John Doe", email: "john@example.com" };
-      setUserData(mockUserData);
       
-      // Uncomment and modify for actual implementation:
-      /*
+     
       const localUserData = localStorage.getItem('user');
       if (localUserData) {
         setUserData(JSON.parse(localUserData));
@@ -64,11 +60,11 @@ const AiAgentChatApp = () => {
         console.error('Failed to fetch user data, redirecting to login.');
         navigate('/login');
       }
-      */
+     
     };
 
     fetchUserData();
-  }, []); // Remove navigate dependency for demo
+  }, [navigate]); // Remove navigate dependency for demo
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -179,7 +175,7 @@ const AiAgentChatApp = () => {
         }, 2000);
       }, 1000);
       
-      /* 
+     
       // Uncomment for actual API implementation:
       try {
         const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -245,7 +241,7 @@ const AiAgentChatApp = () => {
           return agent;
         }));
       }
-      */
+   
       
       setInputValue('');
     }

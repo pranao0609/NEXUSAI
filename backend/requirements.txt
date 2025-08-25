@@ -10,6 +10,9 @@ python-dotenv
 google-auth
 google-auth-oauthlib
 requests
+<<<<<<< HEAD
+reportlab
+=======
 email-validator
 python-multipart
 # Core LangChain + community loaders/tools
@@ -25,20 +28,25 @@ python-dotenv
 google-auth
 google-auth-oauthlib
 requests
+>>>>>>> 214e21d19f17b7af1ae3f7896e9d56de9c7edca3
 # Core LangChain + community loaders/tools
 langchain==0.2.16
 langchain-community==0.2.10
 uvicorn[standard]==0.30.0
+<<<<<<< HEAD
+langgraph
+=======
 redis
 
 # Data Parsing & Cleaning
 beautifulsoup4==4.12.3
 uvicorn[standard]==0.30.0
 
+>>>>>>> 214e21d19f17b7af1ae3f7896e9d56de9c7edca3
 # Data Parsing & Cleaning
 beautifulsoup4==4.12.3
 lxml==5.2.2
-
+pydantic[email]
 # Document Loaders
 
 # Document Loaders
@@ -46,6 +54,10 @@ pypdf==4.2.0
 python-docx==1.1.2
 pandas==2.2.2
 openpyxl==3.1.4
+<<<<<<< HEAD
+pydantic-settings
+python-multipart
+=======
 wikipedia
 arxiv
 
@@ -60,10 +72,13 @@ pandas==2.2.2
 openpyxl==3.1.4
 
 
+>>>>>>> 214e21d19f17b7af1ae3f7896e9d56de9c7edca3
 # Search & Web Tools
 duckduckgo-search==5.3.0
 requests==2.32.3
 httpx==0.27.0
-
+wikipedia
 # Utils
 python-dotenv==1.0.1
+redis
+pymupdf
