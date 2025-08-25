@@ -1,8 +1,8 @@
 # main.py
 from __future__ import annotations
-
+from pydantic import BaseModel
 import logging
-from typing import Any, Dict, List
+from typing import Any, Dict, List ,Optional
 from utils.conversation_store import save_message
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -11,6 +11,12 @@ from fastapi.websockets import WebSocket, WebSocketDisconnect
 import json
 import asyncio
 from datetime import datetime
+from agents.health.health_agent import HealthAgent
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+import os
+from typing import Dict
+import json
+
 
 # --- Safe imports with clear failure messages ---
 try:
@@ -335,3 +341,154 @@ async def get_pipeline_info() -> Dict[str, Any]:
         "pipeline_type": str(type(pipeline)),
         # Add more pipeline introspection here
     }
+
+
+
+class HealthQueryResponse(BaseModel):
+    answer: str
+    confidence: float
+    sources: list
+    errors: Optional[list] = None
+
+# Initialize the health agent (you might want to do this as a singleton)
+health_agent = HealthAgent()
+
+@app.post("/health-query", response_model=HealthQueryResponse)
+async def process_health_query(
+    pdf_file: UploadFile = File(...),
+    question: str = Form(...),
+    user_context: Optional[str] = Form(None),
+    user_id: Optional[str] = Form("default_user")
+):
+    """
+    Process a health query with an uploaded PDF file
+    """
+    try:
+        # Save the uploaded PDF temporarily
+        pdf_path = f"temp_{pdf_file.filename}"
+        with open(pdf_path, "wb") as buffer:
+            content = await pdf_file.read()
+            buffer.write(content)
+        
+        # Process the health query using the same logic as test.py
+        result = await health_agent.process_health_query(
+            pdf_path=pdf_path,
+            question=question,
+            user_context=user_context or "No additional context provided",
+            user_id=user_id
+        )
+        
+        # Clean up the temporary file
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+        
+        return HealthQueryResponse(
+            answer=result['answer'],
+            confidence=result['confidence'],
+            sources=result['sources'],
+            errors=result.get('errors', [])
+        )
+        
+    except Exception as e:
+        # Clean up the temporary file in case of error
+        if 'pdf_path' in locals() and os.path.exists(pdf_path):
+            os.remove(pdf_path)
+        
+        raise HTTPException(status_code=500, detail=f"Error processing health query: {str(e)}")
+
+
+
+@app.post("/test-health-agent", response_model=HealthQueryResponse)
+async def test_health_agent_route(
+    pdf_file: UploadFile = File(...),
+    question: str = Form("What are the common symptoms of diabetes?"),
+    user_context: str = Form("Patient is 45 years old with family history"),
+    user_id: str = Form("test_user_001")
+):
+    """
+    Test route that mimics the exact behavior of test.py but with uploaded PDF
+    """
+    try:
+        # Save the uploaded PDF temporarily
+        pdf_path = f"temp_test_{pdf_file.filename}"
+        with open(pdf_path, "wb") as buffer:
+            content = await pdf_file.read()
+            buffer.write(content)
+        
+        # Use the same parameters as in test.py
+        result = await health_agent.process_health_query(
+            pdf_path=pdf_path,
+            question=question,
+            user_context=user_context,
+            user_id=user_id
+        )
+        
+        # Clean up the temporary file
+        if os.path.exists(pdf_path):
+            os.remove(pdf_path)
+        
+        return HealthQueryResponse(
+            answer=result['answer'],
+            confidence=result['confidence'],
+            sources=result['sources'],
+            errors=result.get('errors', [])
+        )
+        
+    except Exception as e:
+        # Clean up the temporary file in case of error
+        if 'pdf_path' in locals() and os.path.exists(pdf_path):
+            os.remove(pdf_path)
+        
+        raise HTTPException(status_code=500, detail=f"Test failed: {str(e)}")
+    
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy"}
+
+
+from agents.education.education_agent import education_agent
+
+# Pydantic response model
+class EducationResponse(BaseModel):
+    success: bool
+    result: Dict[str, Any]
+    errors: List[str]
+
+# Simple route
+@app.post("/process-education", response_model=EducationResponse)
+async def process_education_pdf(pdf_file: UploadFile = File(...)):
+    """
+    Simple education processing endpoint
+    Upload PDF and get processed results
+    """
+    if not pdf_file.filename.lower().endswith('.pdf'):
+        raise HTTPException(
+            status_code=400,
+            detail="Only PDF files are supported"
+        )
+    
+    pdf_path = None
+    try:
+        # Save uploaded PDF temporarily
+        pdf_path = f"temp_education_{pdf_file.filename}"
+        with open(pdf_path, "wb") as buffer:
+            content = await pdf_file.read()
+            buffer.write(content)
+        
+        # Process with education agent
+        result = await education_agent.process_pdf(pdf_path)
+        
+        return EducationResponse(**result)
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, 
+            detail=f"Processing failed: {str(e)}"
+        )
+        
+    finally:
+        # Clean up temporary file
+        if pdf_path and os.path.exists(pdf_path):
+            os.remove(pdf_path)
