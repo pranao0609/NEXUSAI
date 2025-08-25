@@ -6,14 +6,16 @@ import LoginComponent from '../components/login';
 const Logo = () => (
   <div className="flex items-center space-x-3">
     <div className="relative">
-      <div className="w-10 h-10 bg-gradient-to-br from-[#7FA0A8] to-purple-500 rounded-xl flex items-center justify-center shadow-lg">
-        <span className="text-white font-bold text-xl">NA</span>
-      </div>
+      <img 
+  src="/logolight.drawio.png" 
+  alt="Logo" 
+  className="w-32 h-auto object-contain"
+/>
+
+
       <div className="absolute inset-0 bg-gradient-to-br from-[#7FA0A8] to-purple-500 rounded-xl blur opacity-50 -z-10" />
     </div>
-    <span className="text-gray-800 font-bold text-xl tracking-wide hidden sm:block">
-      NEXUS<span className="text-[#7FA0A8]">AI</span>
-    </span>
+   
   </div>
 );
 
