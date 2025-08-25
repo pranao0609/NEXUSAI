@@ -1,7 +1,6 @@
 # T052-Techworm_Nexus
 
 **A Full-Stack Web Application for Multi-Agent Systems**  
-*Developed by Mayank11104*
 
 ---
 
