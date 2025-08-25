@@ -3,9 +3,10 @@
 from motor.motor_asyncio import AsyncIOMotorClient
 from bson import ObjectId
 import os
+from core.config import settings
 
-MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
-DB_NAME = "llm_chat"
+MONGO_URI = settings.MONGO_URI
+DB_NAME = settings.DATABASE_NAME
 
 client = AsyncIOMotorClient(MONGO_URI)
 db = client[DB_NAME]
