@@ -104,22 +104,6 @@ def health_check() -> Dict[str, str]:
     return {"status": "ok", "pipeline_loaded": pipeline is not None}
 
 
-# --- PDF Download Endpoint ---
-@app.get("/download-pdf/{pdf_filename}", tags=["documents"])
-async def download_pdf(pdf_filename: str) -> FileResponse:
-    """Download a generated PDF with proper filename"""
-    try:
-        pdf_path = f"generated_pdfs/{pdf_filename}"
-        return FileResponse(
-            path=pdf_path,
-            media_type="application/pdf",
-            filename=pdf_filename
-        )
-    except Exception as e:
-        logger.exception(f"Error downloading PDF {pdf_filename}: {e}")
-        raise HTTPException(status_code=404, detail="PDF not found") from e
-
-
 # --- Agent thinking endpoints ---
 @app.get("/agent-thoughts/{session_id}", tags=["debugging"])
 async def get_session_thoughts(session_id: str) -> Dict[str, Any]:
@@ -260,19 +244,14 @@ async def pipeline_endpoint(
                 "agents": list(set(t["agent"] for t in get_agent_thoughts(session_id)))
             }
 
-        # If a PDF was generated, include its path in the response
+        # If a PDF was generated, return it directly
         pdf_path = result.get("pdf_path")
-        if pdf_path:
-            # If not in verbose mode, return PDF directly
-            if not verbose:
-                return FileResponse(
-                    pdf_path,
-                    media_type="application/pdf", 
-                    filename="report.pdf"
-                )
-            else:
-                # In verbose mode, include PDF path in response for frontend to handle
-                response_data["pdf_path"] = pdf_path
+        if pdf_path and not verbose:  # Only return PDF directly if not in verbose mode
+            return FileResponse(
+                pdf_path,
+                media_type="application/pdf", 
+                filename="report.pdf"
+            )
 
         return response_data
 

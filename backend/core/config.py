@@ -12,7 +12,7 @@ class Settings(BaseSettings):
     GOOGLE_REDIRECT_URI: str
     GROQ_API_KEY: str
     GROQ_MODEL: str
-    FRONTEND_URL: str = "http://localhost:5173/chat"
+    FRONTEND_URL: str = "http://localhost:5173/dashboard"
 
 
     class Config:

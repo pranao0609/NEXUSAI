@@ -8,7 +8,7 @@ class Settings:
     # GROQ Configuration
     GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
     GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
-    
+    FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:8000")
     # Qdrant Cloud Configuration
     QDRANT_URL = os.getenv("QDRANT_URL", "https://your-cluster-url.qdrant.io")
     QDRANT_API_KEY = os.getenv("QDRANT_API_KEY", "")

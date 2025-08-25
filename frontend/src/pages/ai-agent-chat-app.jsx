@@ -331,26 +331,28 @@ const AiAgentChatApp = () => {
           console.log(doc);
           i++;
 
-          // Build the formatted response with proper markdown structure
-          formattedResponse = `# ${doc.metadata.title || 'Generated Report'}\n\n`;
+          // Build the formatted response with proper structure
+          formattedResponse = `${doc.metadata.title || 'Generated Report'}
+
+`;
 
           // Add summary section with better formatting
           if (doc.metadata.summary) {
-            formattedResponse += ` Executive Summary\n\n`;
+            formattedResponse += `EXECUTIVE SUMMARY:\n\n`;
             formattedResponse += `${doc.metadata.summary}\n\n`;
             formattedResponse += `---\n\n`;
           }
 
           // Add key points with proper bullet formatting
           if (responseData.points && responseData.points.length > 0) {
-            formattedResponse += `## 🔑 Key Points\n\n`;
+            formattedResponse += `KEY POINTS:\n\n`;
 
             // Skip the first point and format the rest as bullets
             const keyPoints = responseData.points.slice(1);
             keyPoints.forEach((point, index) => {
               // Clean up the point text and ensure proper formatting
               const cleanPoint = point.trim().replace(/^[-•*]\s*/, '');
-              formattedResponse += `• **${cleanPoint}**\n\n`;
+              formattedResponse += `• ${cleanPoint}\n\n`;
             });
 
             formattedResponse += `---\n\n`;
@@ -359,23 +361,23 @@ const AiAgentChatApp = () => {
           // Add report sections with enhanced formatting
           if (responseData.report) {
             if (responseData.report.introduction) {
-              formattedResponse += `## 🚀 Introduction\n\n`;
+              formattedResponse += `INTRODUCTION:\n\n`;
               formattedResponse += `${responseData.report.introduction}\n\n`;
             }
 
             if (responseData.report.conclusion) {
-              formattedResponse += `## 💡 Conclusion\n\n`;
+              formattedResponse += `CONCLUSION:\n\n`;
               formattedResponse += `${responseData.report.conclusion}\n\n`;
             }
           }
 
           // Add detailed analysis if available
           if (responseData.analysis) {
-            formattedResponse += `## 📊 Detailed Analysis\n\n`;
+            formattedResponse += `DETAILED ANALYSIS:\n\n`;
 
             if (Array.isArray(responseData.analysis)) {
               responseData.analysis.forEach((item, index) => {
-                formattedResponse += `### ${index + 1}. ${item.title || `Analysis Point ${index + 1}`}\n\n`;
+                formattedResponse += `${index + 1}. ${item.title || `Analysis Point ${index + 1}`}:\n\n`;
                 formattedResponse += `${item.content || item}\n\n`;
               });
             } else {
@@ -385,10 +387,10 @@ const AiAgentChatApp = () => {
 
           // Add recommendations if available
           if (responseData.recommendations && responseData.recommendations.length > 0) {
-            formattedResponse += `## 🎯 Recommendations\n\n`;
+            formattedResponse += `RECOMMENDATIONS:\n\n`;
 
             responseData.recommendations.forEach((recommendation, index) => {
-              formattedResponse += `${index + 1}. **${recommendation.title || `Recommendation ${index + 1}`}**\n`;
+              formattedResponse += `${index + 1}. ${recommendation.title || `Recommendation ${index + 1}`}:\n`;
               formattedResponse += `   ${recommendation.description || recommendation}\n\n`;
             });
 
@@ -397,13 +399,13 @@ const AiAgentChatApp = () => {
 
           // Add methodology if available
           if (responseData.methodology) {
-            formattedResponse += `## 🔬 Methodology\n\n`;
+            formattedResponse += `METHODOLOGY:\n\n`;
             formattedResponse += `${responseData.methodology}\n\n`;
           }
 
           // Add data sources with better formatting
           if (responseData.text_sources && responseData.text_sources.length > 0) {
-            formattedResponse += `## 📚 Sources & References\n\n`;
+            formattedResponse += `SOURCES & REFERENCES:\n\n`;
 
             responseData.text_sources.forEach((source, index) => {
               // Format sources as numbered list with better styling
@@ -416,16 +418,16 @@ const AiAgentChatApp = () => {
           // Add metadata footer if available
           if (doc.metadata.author || doc.metadata.date || doc.metadata.version) {
             formattedResponse += `---\n\n`;
-            formattedResponse += `### 📄 Document Information\n\n`;
+            formattedResponse += `DOCUMENT INFORMATION:\n\n`;
 
             if (doc.metadata.author) {
-              formattedResponse += `**Author:** ${doc.metadata.author}  \n`;
+              formattedResponse += `Author: ${doc.metadata.author}\n`;
             }
             if (doc.metadata.date) {
-              formattedResponse += `**Date:** ${doc.metadata.date}  \n`;
+              formattedResponse += `Date: ${doc.metadata.date}\n`;
             }
             if (doc.metadata.version) {
-              formattedResponse += `**Version:** ${doc.metadata.version}  \n`;
+              formattedResponse += `Version: ${doc.metadata.version}\n`;
             }
 
             formattedResponse += `\n`;

@@ -13,10 +13,10 @@ class PDFGeneratorAgent:
         self.output_dir = output_dir
         os.makedirs(self.output_dir, exist_ok=True)
 
-    async def generate_pdf(self, title: str, content: str, style: str = "professional") -> str:
+    async def generate_pdf(self, title: str, content: str,userid:str, style: str = "professional") -> str:
         """Generate PDF report from given content."""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = os.path.join(self.output_dir, f"{title}_{style}_{timestamp}.pdf")
+        filename = os.path.join(self.output_dir, f"{title}_{style}_{userid}.pdf")
 
         # Basic ReportLab setup
         doc = SimpleDocTemplate(filename, pagesize=A4)

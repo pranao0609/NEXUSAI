@@ -166,6 +166,9 @@ def make_file_ingest_node(ingestor: IngestionAgent, timeout_s: Optional[float] =
     return file_ingest_node
 
 
+import random
+import asyncio
+
 def make_text_ingest_node(ingestor: IngestionAgent, timeout_s: Optional[float] = 60.0):
     """Handle text-based ingestion (Web, Wiki, Arxiv)."""
     async def text_ingest_node(state: PipelineState) -> Dict[str, Any]:
@@ -338,6 +341,35 @@ def make_analyse_node(analyser: AnalyserAgent, timeout_s: Optional[float] = 45.0
     
     return analyse_node
 
+def make_greeting_node():
+    """Simulate a greeting/loading node with verbose output."""
+    async def greeting_node(state: PipelineState) -> Dict[str, Any]:
+        logger.info("[greeting] Hello! Initializing your request...")
+        await asyncio.sleep(0.5)
+        
+        steps = [
+            "Analyzing query context...",
+            "Searching knowledge base...",
+            "Fetching relevant sources...",
+            "Preparing pipeline agents...",
+            "Optimizing search parameters...",
+            "Almost ready to process your request..."
+        ]
+        
+        # Simulate step-by-step verbose output
+        for step in steps:
+            logger.info(f"[greeting] {step}")
+            # random short sleep to mimic real-time progress
+            await asyncio.sleep(random.uniform(0.3, 0.7))
+        
+        logger.info("[greeting] All systems ready! Proceeding to main pipeline.")
+        
+        # Optionally, add a verbose message to the state (for UI feedback)
+        state.setdefault("verbose", []).extend(steps + ["All systems ready!"])
+        
+        return {"processing_stage": "greeting_done"}
+    
+    return greeting_node
 
 def make_pdf_node(pdf_agent: PDFGeneratorAgent, timeout_s: Optional[float] = 45.0):
     async def pdf_node(state: PipelineState) -> Dict[str, Any]:
@@ -459,6 +491,9 @@ def build_pipeline() -> Any:
     graph = StateGraph(PipelineState)
     
     # Add nodes
+    greeting_node = make_greeting_node()
+    router_node = make_router_node()
+    graph.add_node("greeting", greeting_node)
     graph.add_node("router", router_node)
     graph.add_node("file_ingest", file_ingest_node)
     graph.add_node("text_ingest", text_ingest_node)
@@ -468,8 +503,14 @@ def build_pipeline() -> Any:
     graph.add_node("pdf", pdf_node)
     
     # Set entry point
-    graph.set_entry_point("router")
+    graph.set_entry_point("greeting")
     
+    graph.add_conditional_edges(
+    "greeting",
+    lambda state: "router",
+    {"router": "router"}
+)
+
     # Router -> file_ingest or text_ingest
     graph.add_conditional_edges(
         "router",
