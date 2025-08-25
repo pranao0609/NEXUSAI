@@ -8,6 +8,6 @@ __pycache__/
 # Ignore virtual environments
 venv/
 venv1/
-
+newenv/
 texusenv/
 generated_pdfs/
