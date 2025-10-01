@@ -389,10 +389,11 @@ def make_pdf_node(pdf_agent: PDFGeneratorAgent, timeout_s: Optional[float] = 45.
                 report_content += f"{key}:\n{value}\n\n"
             
             pdf_path: str = await _with_timeout(
-                pdf_agent.generate_pdf(title, report_content, "professional"),
-                timeout_s,
-                "PDF Generation",
-            )
+            pdf_agent.generate_pdf(title, report_content, user_id="system", style="professional"),
+            timeout_s,
+            "PDF Generation",
+)
+
             
             logger.info("[pdf_node] PDF generated at %s", pdf_path)
             return {"pdf_path": pdf_path}

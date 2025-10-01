@@ -19,18 +19,19 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 import os
 from typing import Dict
 import json
+from agents.orchestrator.orchestrator_agent import build_pipeline
 
 
 # --- Safe imports with clear failure messages ---
-try:
-    from routers import auth
-except Exception as e:
-    raise RuntimeError(f"Failed to import routers.auth: {e}") from e
-
-try:
-    from agents.orchestrator.orchestrator_agent import build_pipeline
-except Exception as e:
-    raise RuntimeError(f"Failed to import build_pipeline: {e}") from e
+#try:
+#    from routers import auth
+#except Exception as e:
+#    raise RuntimeError(f"Failed to import routers.auth: {e}") from e
+#
+#try:
+#    from agents.orchestrator.orchestrator_agent import build_pipeline
+#except Exception as e:
+#    raise RuntimeError(f"Failed to import build_pipeline: {e}") from e
 
 # --- Enhanced logging setup ---
 logging.basicConfig(
@@ -60,7 +61,7 @@ app.add_middleware(
 )
 
 # --- Routers ---
-app.include_router(auth.router, prefix="/auth", tags=["auth"])
+#app.include_router(auth.router, prefix="/auth", tags=["auth"])
 
 # --- Pipeline Graph instance ---
 pipeline = build_pipeline()
@@ -155,10 +156,10 @@ async def pipeline_endpoint(
     source: str = Form("wiki", description="ingestion source key e.g. wiki|web|arxiv|csv"),
     query: str = Form(" ", description="search/topic query for ingestion"),
     title: str = Form("Generated Report", description="report title"),
-    file_content: Optional[UploadFile] = None,  # optional
+    file_content: Optional[str] = Form(None),
     audience: str = Form("General", description="target audience"),
     verbose: bool = Form(False, description="enable verbose logging and agent thinking"),
-    user: dict = Depends(get_current_user),
+    #user: dict = None,
 ) -> Any:
     """
     Runs the full multi-agent pipeline (LangGraph powered):
@@ -170,7 +171,7 @@ async def pipeline_endpoint(
     Now with verbose agent thinking and removed source parameter.
     """
     print(query)
-    session_id = f"session-{user.id}"
+    session_id = "session_demo"
     
     # Clear previous thoughts for this session
     if session_id in agent_thoughts:

@@ -1,81 +1,106 @@
-import os
+# backend/agents/analyser/analyser_agent.py
+
 import httpx
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 from core.config import settings
 
-# Load key from env (fallback hardcoded – not recommended for production)
-GROQ_API_KEY=settings.GROQ_API_KEY
 
+GROQ_API_KEY = settings.GROQ_API_KEY
 GROQ_MODEL = settings.GROQ_MODEL
 
 
 class AnalyserAgent:
+    """
+    AnalyserAgent converts bullet points into a structured report
+    using Groq LLM API and enforces a consistent JSON schema.
+    """
+
     def __init__(self) -> None:
         if not GROQ_API_KEY or GROQ_API_KEY.startswith("your_"):
-            raise RuntimeError("❌ GROQ_API_KEY not set in environment")
+            raise RuntimeError("❌ GROQ_API_KEY is missing or invalid in environment variables")
 
-    async def analyse(self, points: List[str], title: str, audience: str) -> Dict[str, Any]:
-        """Generate structured report from bullet points."""
-
-        # --- Prompt for Groq ---
-        prompt = f"""
-        Create a structured JSON report with the following keys:
-        - introduction (short overview, <= 5 sentences)
-        - main_points (list of concise bullets)
-        - action_plan (list of steps)
-        - concerns (list of potential risks/issues)
-        - conclusion (short closing)
-
-        Title: {title}
-        Audience: {audience}
-
-        Points: {points}
-        """
-
-        headers = {
+        self.headers = {
             "Authorization": f"Bearer {GROQ_API_KEY}",
             "Content-Type": "application/json",
         }
+        self.endpoint = "https://api.groq.com/openai/v1/chat/completions"
+
+    async def analyse(
+        self, points: List[str], title: str, audience: str
+    ) -> Dict[str, Union[str, List[str]]]:
+        """
+        Generate a structured report JSON object from bullet points.
+
+        Args:
+            points (List[str]): Extracted bullet points.
+            title (str): Report title.
+            audience (str): Target audience.
+
+        Returns:
+            Dict[str, Any]: Structured report.
+        """
+
+        prompt = f"""
+        Generate a structured report as a valid JSON object with the following schema:
+        {{
+          "introduction": "short overview, <= 5 sentences",
+          "main_points": ["point1", "point2", ...],
+          "action_plan": ["step1", "step2", ...],
+          "concerns": ["risk1", "risk2", ...],
+          "conclusion": "short closing remark"
+        }}
+
+        Ensure strict JSON formatting without additional commentary.
+
+        Title: {title}
+        Audience: {audience}
+        Points: {points}
+        """
 
         payload = {
             "model": GROQ_MODEL,
             "messages": [
-                {"role": "system", "content": "You are a structured report generator. Always respond in valid JSON."},
+                {"role": "system", "content": "You are a structured report generator. Return only valid JSON."},
                 {"role": "user", "content": prompt},
             ],
-            "temperature": 0.4,
+            "temperature": 0.3,
         }
 
-        # --- Call Groq API ---
         async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers=headers,
-                json=payload,
-            )
-            resp.raise_for_status()
-            data = resp.json()
+            try:
+                resp = await client.post(self.endpoint, headers=self.headers, json=payload)
+                resp.raise_for_status()
+                data = resp.json()
+            except httpx.RequestError as e:
+                return {"error": f"❌ Request failed: {str(e)}", "main_points": points}
+            except httpx.HTTPStatusError as e:
+                return {"error": f"❌ Groq API returned {e.response.status_code}: {e.response.text}", "main_points": points}
 
-        # ✅ Extract safely
+        # Extract model output
         try:
             raw = data["choices"][0]["message"]["content"]
         except (KeyError, IndexError) as e:
-            return {
-                "error": f"⚠️ Unexpected Groq response format: {e}",
-                "raw_response": data,
-                "main_points": points,
-            }
+            return {"error": f"⚠️ Unexpected Groq response format: {e}", "main_points": points}
 
-        # ✅ Parse JSON safely
+        # Parse JSON safely
         try:
-            return json.loads(raw)
+            parsed = json.loads(raw)
         except json.JSONDecodeError:
-            # fallback if model gives plain text instead of JSON
             return {
                 "introduction": raw[:300],
                 "main_points": points,
                 "action_plan": [],
                 "concerns": [],
-                "conclusion": "See full text above.",
+                "conclusion": "⚠️ Invalid JSON, see introduction.",
             }
+
+        # Enforce schema defaults
+        schema = {
+            "introduction": "",
+            "main_points": [],
+            "action_plan": [],
+            "concerns": [],
+            "conclusion": "",
+        }
+        return {key: parsed.get(key, default) for key, default in schema.items()}

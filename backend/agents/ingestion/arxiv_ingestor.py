@@ -8,6 +8,7 @@ class ArxivIngestor(BaseIngestor):
         loader = ArxivLoader(query=query, load_max_docs=1)
         docs = loader.load()
         return [{
+            
             "source": "arxiv", 
             "content": d.page_content[:1000],  # Truncate to first 1000 characters
             "metadata": d.metadata
